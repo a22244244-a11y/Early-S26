@@ -4,12 +4,16 @@ import { v } from "convex/values";
 export const preview = query({
   args: { groupId: v.id("groups") },
   handler: async (ctx, args) => {
-    const pendingReservations = await ctx.db
+    const allPending = await ctx.db
       .query("reservations")
       .withIndex("by_group_status", (q) =>
         q.eq("groupId", args.groupId).eq("status", "대기")
       )
       .collect();
+    // 서류 작성완료된 예약만 매칭 대상
+    const pendingReservations = allPending.filter(
+      (r) => r.documentStatus === "작성완료"
+    );
 
     const allInventory = await ctx.db
       .query("inventory")
@@ -71,12 +75,16 @@ export const preview = query({
 export const execute = mutation({
   args: { groupId: v.id("groups") },
   handler: async (ctx, args) => {
-    const pendingReservations = await ctx.db
+    const allPending = await ctx.db
       .query("reservations")
       .withIndex("by_group_status", (q) =>
         q.eq("groupId", args.groupId).eq("status", "대기")
       )
       .collect();
+    // 서류 작성완료된 예약만 매칭 대상
+    const pendingReservations = allPending.filter(
+      (r) => r.documentStatus === "작성완료"
+    );
 
     const modelColorPairs = new Set<string>();
     for (const r of pendingReservations) {
@@ -94,7 +102,7 @@ export const execute = mutation({
         .query("inventory")
         .withIndex("by_model_color_matched", (q) =>
           q
-            .eq("model", model as "S26" | "S26+" | "Ultra")
+            .eq("model", model as "S26" | "S26+" | "S26Ultra")
             .eq("color", color as "블랙" | "화이트" | "코발트 바이올렛" | "스카이 블루" | "핑크 골드" | "실버 섀도우")
             .eq("isMatched", false)
         )

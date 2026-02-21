@@ -33,14 +33,14 @@ import { useAuth } from "@/lib/auth";
 import { Id } from "../../../convex/_generated/dataModel";
 
 const singleFormSchema = z.object({
-  model: z.enum(["S26", "S26+", "Ultra"]),
+  model: z.enum(["S26", "S26+", "S26Ultra"]),
   color: z.string().min(1, "색상을 선택하세요"),
   serialNumber: z.string().min(1, "일련번호를 입력하세요"),
   arrivalDate: z.string().min(1, "입고일을 입력하세요"),
 });
 
 const bulkFormSchema = z.object({
-  model: z.enum(["S26", "S26+", "Ultra"]),
+  model: z.enum(["S26", "S26+", "S26Ultra"]),
   color: z.string().min(1, "색상을 선택하세요"),
   serialNumbers: z.string().min(1, "일련번호를 입력하세요"),
   arrivalDate: z.string().min(1, "입고일을 입력하세요"),

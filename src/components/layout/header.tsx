@@ -41,10 +41,10 @@ export function Header() {
       transition={{ duration: 0.3 }}
       className="border-b bg-white sticky top-0 z-50"
     >
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <span className="text-xl font-bold tracking-tight">
-            Galaxy S26 예약관리
+          <span className="text-lg font-bold tracking-tight">
+            S26 예약관리
           </span>
           {user.groupName && (
             <Badge variant="outline" className="text-xs">
@@ -52,6 +52,7 @@ export function Header() {
             </Badge>
           )}
         </Link>
+
         <div className="flex items-center gap-4">
           <nav className="flex items-center gap-1">
             {navItems.map((item) => (
@@ -59,7 +60,7 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "px-4 py-2 rounded-md text-sm font-medium transition-colors",
+                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   pathname === item.href
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -69,10 +70,8 @@ export function Header() {
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-2 ml-2 border-l pl-4">
-            <Badge variant={roleBadge.variant}>
-              {roleBadge.label}
-            </Badge>
+          <div className="flex items-center gap-2 border-l pl-4">
+            <Badge variant={roleBadge.variant}>{roleBadge.label}</Badge>
             <span className="text-sm text-muted-foreground">{user.name}</span>
             <Button variant="ghost" size="sm" onClick={logout}>
               로그아웃

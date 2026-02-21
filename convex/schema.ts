@@ -16,7 +16,7 @@ export const subscriptionTypeValidator = v.union(
 export const modelValidator = v.union(
   v.literal("S26"),
   v.literal("S26+"),
-  v.literal("Ultra")
+  v.literal("S26Ultra")
 );
 
 export const colorValidator = v.union(
@@ -31,6 +31,12 @@ export const colorValidator = v.union(
 export const reservationStatusValidator = v.union(
   v.literal("대기"),
   v.literal("완료")
+);
+
+export const documentStatusValidator = v.union(
+  v.literal("미작성"),
+  v.literal("작성완료"),
+  v.literal("보류")
 );
 
 export default defineSchema({
@@ -75,6 +81,7 @@ export default defineSchema({
     preOrderNumber: v.optional(v.string()),
     matchedSerialNumber: v.optional(v.string()),
     status: reservationStatusValidator,
+    documentStatus: v.optional(documentStatusValidator),
   })
     .index("by_model_color_status", ["model", "color", "status"])
     .index("by_store", ["storeName"])

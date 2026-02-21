@@ -179,6 +179,87 @@ export const removeStore = mutation({
   },
 });
 
+// ========== Group Overview (SuperAdmin) ==========
+
+export const groupOverview = query({
+  args: {},
+  handler: async (ctx) => {
+    const groups = await ctx.db.query("groups").collect();
+
+    const result = [];
+    for (const group of groups) {
+      // 매장 수
+      const stores = await ctx.db
+        .query("stores")
+        .withIndex("by_group", (q) => q.eq("groupId", group._id))
+        .collect();
+
+      // 예약 현황
+      const reservations = await ctx.db
+        .query("reservations")
+        .withIndex("by_group", (q) => q.eq("groupId", group._id))
+        .collect();
+
+      const totalReservations = reservations.length;
+      const pendingReservations = reservations.filter((r) => r.status === "대기").length;
+      const completedReservations = reservations.filter((r) => r.status === "완료").length;
+      const docReady = reservations.filter((r) => r.documentStatus === "작성완료").length;
+
+      // 재고 현황
+      const inventory = await ctx.db
+        .query("inventory")
+        .withIndex("by_group", (q) => q.eq("groupId", group._id))
+        .collect();
+
+      const totalInventory = inventory.length;
+      const availableInventory = inventory.filter((i) => !i.isMatched && !i.isTransferred).length;
+      const matchedInventory = inventory.filter((i) => i.isMatched).length;
+      const transferredInventory = inventory.filter((i) => i.isTransferred).length;
+
+      const matchRate = totalReservations > 0
+        ? Math.round((completedReservations / totalReservations) * 100)
+        : 0;
+
+      // 매장별 예약 현황
+      const storeBreakdown = stores.map((store) => {
+        const storeReservations = reservations.filter((r) => r.storeName === store.name);
+        const storePending = storeReservations.filter((r) => r.status === "대기").length;
+        const storeCompleted = storeReservations.filter((r) => r.status === "완료").length;
+        return {
+          storeName: store.name,
+          pCode: store.pCode,
+          total: storeReservations.length,
+          pending: storePending,
+          completed: storeCompleted,
+        };
+      });
+
+      result.push({
+        groupId: group._id,
+        groupName: group.name,
+        isActive: group.isActive,
+        storeCount: stores.length,
+        reservation: {
+          total: totalReservations,
+          pending: pendingReservations,
+          completed: completedReservations,
+          docReady,
+        },
+        inventory: {
+          total: totalInventory,
+          available: availableInventory,
+          matched: matchedInventory,
+          transferred: transferredInventory,
+        },
+        matchRate,
+        storeBreakdown,
+      });
+    }
+
+    return result;
+  },
+});
+
 // ========== Users ==========
 
 export const listUsers = query({

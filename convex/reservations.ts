@@ -4,6 +4,7 @@ import {
   subscriptionTypeValidator,
   modelValidator,
   colorValidator,
+  documentStatusValidator,
 } from "./schema";
 
 export const list = query({
@@ -67,6 +68,7 @@ export const create = mutation({
       preOrderNumber: args.preOrderNumber || undefined,
       matchedSerialNumber: undefined,
       status: "대기",
+      documentStatus: "미작성",
     });
   },
 });
@@ -124,5 +126,44 @@ export const unmatch = mutation({
       matchedSerialNumber: undefined,
       status: "대기",
     });
+  },
+});
+
+export const updateModel = mutation({
+  args: {
+    id: v.id("reservations"),
+    model: modelValidator,
+    color: colorValidator,
+  },
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db.get(args.id);
+    if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
+    if (reservation.status === "완료") throw new Error("매칭 완료된 예약은 변경할 수 없습니다.");
+    await ctx.db.patch(args.id, { model: args.model, color: args.color });
+  },
+});
+
+export const updateColor = mutation({
+  args: {
+    id: v.id("reservations"),
+    color: colorValidator,
+  },
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db.get(args.id);
+    if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
+    if (reservation.status === "완료") throw new Error("매칭 완료된 예약은 변경할 수 없습니다.");
+    await ctx.db.patch(args.id, { color: args.color });
+  },
+});
+
+export const updateDocumentStatus = mutation({
+  args: {
+    id: v.id("reservations"),
+    documentStatus: documentStatusValidator,
+  },
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db.get(args.id);
+    if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
+    await ctx.db.patch(args.id, { documentStatus: args.documentStatus });
   },
 });

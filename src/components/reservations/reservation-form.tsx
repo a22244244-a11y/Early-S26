@@ -46,7 +46,7 @@ const formSchema = z.object({
   subscriptionType: z.enum(["010신규", "MNP", "기변"]),
   customerName: z.string().min(1, "고객명을 입력하세요"),
   productNumber: z.string().min(1, "상품번호를 입력하세요"),
-  model: z.enum(["S26", "S26+", "Ultra"]),
+  model: z.enum(["S26", "S26+", "S26Ultra"]),
   color: z.string().min(1, "색상을 선택하세요"),
   activationTiming: z.string().min(1, "개통시점을 선택하세요"),
   preOrderNumber: z.string().optional(),

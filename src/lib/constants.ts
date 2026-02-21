@@ -1,7 +1,7 @@
 export const SUBSCRIPTION_TYPES = ["010신규", "MNP", "기변"] as const;
 export type SubscriptionType = (typeof SUBSCRIPTION_TYPES)[number];
 
-export const MODELS = ["S26", "S26+", "Ultra"] as const;
+export const MODELS = ["S26", "S26+", "S26Ultra"] as const;
 export type Model = (typeof MODELS)[number];
 
 export const COLORS_BY_MODEL: Record<Model, readonly string[]> = {
