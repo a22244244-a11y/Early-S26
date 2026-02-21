@@ -42,12 +42,13 @@ const DOC_STATUS_CONFIG: Record<string, { label: string; variant: "default" | "s
 };
 
 export function ReservationList() {
-  const { groupId } = useAuth();
+  const { groupId, isAdmin } = useAuth();
   const reservations = useQuery(
     api.reservations.list,
     groupId ? { groupId: groupId as Id<"groups"> } : "skip"
   );
   const updateDocumentStatus = useMutation(api.reservations.updateDocumentStatus);
+  const cancelReservation = useMutation(api.reservations.cancel);
   const removeReservation = useMutation(api.reservations.remove);
   const updateColor = useMutation(api.reservations.updateColor);
   const updateModel = useMutation(api.reservations.updateModel);
@@ -62,8 +63,9 @@ export function ReservationList() {
   const [selectedModelColor, setSelectedModelColor] = useState("");
   const [preOrderNumber, setPreOrderNumber] = useState("");
 
-  // 대기 중인 예약만 표시
-  const pendingReservations = reservations?.filter((r) => r.status === "대기") ?? [];
+  // 대기 + 취소 예약 표시 (완료 제외)
+  const visibleReservations = reservations?.filter((r) => r.status === "대기" || r.status === "취소") ?? [];
+  const pendingCount = visibleReservations.filter((r) => r.status === "대기").length;
 
   async function handleDocStatus(id: string) {
     try {
@@ -80,8 +82,18 @@ export function ReservationList() {
   async function handleCancel(id: string, customerName: string) {
     if (!confirm(`${customerName} 고객의 예약을 취소하시겠습니까?`)) return;
     try {
-      await removeReservation({ id: id as Id<"reservations"> });
+      await cancelReservation({ id: id as Id<"reservations"> });
       toast.success("예약이 취소되었습니다.");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }
+
+  async function handleDelete(id: string, customerName: string) {
+    if (!confirm(`${customerName} 고객의 예약을 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`)) return;
+    try {
+      await removeReservation({ id: id as Id<"reservations"> });
+      toast.success("예약이 삭제되었습니다.");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -140,126 +152,266 @@ export function ReservationList() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             예약 고객 리스트
-            {pendingReservations.length > 0 && (
-              <Badge variant="secondary">{pendingReservations.length}건 대기</Badge>
+            {pendingCount > 0 && (
+              <Badge variant="secondary">{pendingCount}건 대기</Badge>
             )}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {pendingReservations.length === 0 ? (
+          {visibleReservations.length === 0 ? (
             <p className="text-center text-muted-foreground py-4">
-              대기 중인 예약이 없습니다.
+              등록된 예약이 없습니다.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>고객명</TableHead>
-                    <TableHead>모델</TableHead>
-                    <TableHead>색상</TableHead>
-                    <TableHead>개통시점</TableHead>
-                    <TableHead>사전예약번호</TableHead>
-                    <TableHead>서류상태</TableHead>
-                    <TableHead>작업</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pendingReservations.map((r, i) => {
-                    const docStatus = r.documentStatus || "미작성";
-                    const config = DOC_STATUS_CONFIG[docStatus] ?? DOC_STATUS_CONFIG["미작성"];
-                    return (
-                      <motion.tr
-                        key={r._id}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        className="border-b"
-                      >
-                        <TableCell className="font-medium">{r.customerName}</TableCell>
-                        <TableCell>{r.model}</TableCell>
-                        <TableCell>{r.color}</TableCell>
-                        <TableCell className="text-sm">{r.activationTiming}</TableCell>
-                        <TableCell className="text-sm">
-                          {r.preOrderNumber ? (
-                            <span className="text-green-600 font-medium">{r.preOrderNumber}</span>
-                          ) : (
-                            <span className="text-muted-foreground">미입력</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
+            <>
+              {/* Mobile card layout */}
+              <div className="space-y-3 md:hidden">
+                {visibleReservations.map((r, i) => {
+                  const isCancelled = r.status === "취소";
+                  const docStatus = r.documentStatus || "미작성";
+                  const config = DOC_STATUS_CONFIG[docStatus] ?? DOC_STATUS_CONFIG["미작성"];
+                  return (
+                    <motion.div
+                      key={r._id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className={`border rounded-lg p-3 space-y-2 ${isCancelled ? "opacity-50" : ""}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-base">{r.customerName}</span>
+                        {isCancelled ? (
+                          <Badge variant="destructive">취소</Badge>
+                        ) : (
                           <Badge variant={config.variant}>{config.label}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {docStatus !== "작성완료" && (
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                        <span>{r.model} / {r.color}</span>
+                        <span>{r.activationTiming}</span>
+                      </div>
+                      <div className="text-sm">
+                        사전예약번호:{" "}
+                        {r.preOrderNumber ? (
+                          <span className="text-green-600 font-medium">{r.preOrderNumber}</span>
+                        ) : (
+                          <span className="text-muted-foreground">미입력</span>
+                        )}
+                      </div>
+                      {!isCancelled && (
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          {docStatus !== "작성완료" && (
+                            <Button
+                              size="sm"
+                              className="h-9"
+                              onClick={() => handleDocStatus(r._id)}
+                            >
+                              서류 작성완료
+                            </Button>
+                          )}
+                          {docStatus === "작성완료" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-9"
+                              onClick={() =>
+                                updateDocumentStatus({
+                                  id: r._id as Id<"reservations">,
+                                  documentStatus: "미작성",
+                                })
+                              }
+                            >
+                              서류초기화
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9"
+                            onClick={() => {
+                              setPreOrderDialog({ id: r._id, current: r.preOrderNumber || "" });
+                              setPreOrderNumber(r.preOrderNumber || "");
+                            }}
+                          >
+                            사전예약번호
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9"
+                            onClick={() => {
+                              setColorDialog({ id: r._id, model: r.model, color: r.color });
+                              setSelectedColor(r.color);
+                            }}
+                          >
+                            색상변경
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-9"
+                            onClick={() => {
+                              setModelDialog({ id: r._id, model: r.model, color: r.color });
+                              setSelectedModel(r.model);
+                              setSelectedModelColor(r.color);
+                            }}
+                          >
+                            모델변경
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-9 col-span-2"
+                            onClick={() => handleCancel(r._id, r.customerName)}
+                          >
+                            취소
+                          </Button>
+                        </div>
+                      )}
+                      {isCancelled && isAdmin && (
+                        <div className="pt-1">
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-9 w-full"
+                            onClick={() => handleDelete(r._id, r.customerName)}
+                          >
+                            삭제
+                          </Button>
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Desktop table layout */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>고객명</TableHead>
+                      <TableHead>모델</TableHead>
+                      <TableHead>색상</TableHead>
+                      <TableHead>개통시점</TableHead>
+                      <TableHead>사전예약번호</TableHead>
+                      <TableHead>상태</TableHead>
+                      <TableHead>작업</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {visibleReservations.map((r, i) => {
+                      const isCancelled = r.status === "취소";
+                      const docStatus = r.documentStatus || "미작성";
+                      const config = DOC_STATUS_CONFIG[docStatus] ?? DOC_STATUS_CONFIG["미작성"];
+                      return (
+                        <motion.tr
+                          key={r._id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.03 }}
+                          className={`border-b transition-colors hover:bg-muted/50 ${isCancelled ? "opacity-50" : ""}`}
+                        >
+                          <TableCell className="font-medium">{r.customerName}</TableCell>
+                          <TableCell>{r.model}</TableCell>
+                          <TableCell>{r.color}</TableCell>
+                          <TableCell className="text-sm">{r.activationTiming}</TableCell>
+                          <TableCell className="text-sm">
+                            {r.preOrderNumber ? (
+                              <span className="text-green-600 font-medium">{r.preOrderNumber}</span>
+                            ) : (
+                              <span className="text-muted-foreground">미입력</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {isCancelled ? (
+                              <Badge variant="destructive">취소</Badge>
+                            ) : (
+                              <Badge variant={config.variant}>{config.label}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {!isCancelled && (
+                              <div className="flex flex-wrap gap-1">
+                                {docStatus !== "작성완료" && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleDocStatus(r._id)}
+                                  >
+                                    서류 작성완료
+                                  </Button>
+                                )}
+                                {docStatus === "작성완료" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      updateDocumentStatus({
+                                        id: r._id as Id<"reservations">,
+                                        documentStatus: "미작성",
+                                      })
+                                    }
+                                  >
+                                    서류초기화
+                                  </Button>
+                                )}
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setPreOrderDialog({ id: r._id, current: r.preOrderNumber || "" });
+                                    setPreOrderNumber(r.preOrderNumber || "");
+                                  }}
+                                >
+                                  사전예약번호
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setColorDialog({ id: r._id, model: r.model, color: r.color });
+                                    setSelectedColor(r.color);
+                                  }}
+                                >
+                                  색상변경
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setModelDialog({ id: r._id, model: r.model, color: r.color });
+                                    setSelectedModel(r.model);
+                                    setSelectedModelColor(r.color);
+                                  }}
+                                >
+                                  모델변경
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleCancel(r._id, r.customerName)}
+                                >
+                                  취소
+                                </Button>
+                              </div>
+                            )}
+                            {isCancelled && isAdmin && (
                               <Button
+                                variant="destructive"
                                 size="sm"
-                                onClick={() => handleDocStatus(r._id)}
+                                onClick={() => handleDelete(r._id, r.customerName)}
                               >
-                                서류 작성완료
+                                삭제
                               </Button>
                             )}
-                            {docStatus === "작성완료" && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() =>
-                                  updateDocumentStatus({
-                                    id: r._id as Id<"reservations">,
-                                    documentStatus: "미작성",
-                                  })
-                                }
-                              >
-                                서류초기화
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setPreOrderDialog({ id: r._id, current: r.preOrderNumber || "" });
-                                setPreOrderNumber(r.preOrderNumber || "");
-                              }}
-                            >
-                              사전예약번호
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setColorDialog({ id: r._id, model: r.model, color: r.color });
-                                setSelectedColor(r.color);
-                              }}
-                            >
-                              색상변경
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setModelDialog({ id: r._id, model: r.model, color: r.color });
-                                setSelectedModel(r.model);
-                                setSelectedModelColor(r.color);
-                              }}
-                            >
-                              모델변경
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleCancel(r._id, r.customerName)}
-                            >
-                              취소
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </motion.tr>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
+                          </TableCell>
+                        </motion.tr>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

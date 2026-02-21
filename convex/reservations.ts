@@ -87,6 +87,17 @@ export const updatePreOrderNumber = mutation({
   },
 });
 
+export const cancel = mutation({
+  args: { id: v.id("reservations") },
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db.get(args.id);
+    if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
+    if (reservation.status === "완료") throw new Error("매칭 완료된 예약은 취소할 수 없습니다. 먼저 매칭을 해제하세요.");
+    if (reservation.status === "취소") throw new Error("이미 취소된 예약입니다.");
+    await ctx.db.patch(args.id, { status: "취소" });
+  },
+});
+
 export const remove = mutation({
   args: { id: v.id("reservations") },
   handler: async (ctx, args) => {

@@ -71,6 +71,55 @@ export const countByModelColor = query({
   },
 });
 
+export const assignableReservations = query({
+  args: { inventoryId: v.id("inventory") },
+  handler: async (ctx, args) => {
+    const item = await ctx.db.get(args.inventoryId);
+    if (!item) throw new Error("재고 항목을 찾을 수 없습니다.");
+
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_model_color_status", (q) =>
+        q.eq("model", item.model).eq("color", item.color).eq("status", "대기")
+      )
+      .collect();
+
+    return reservations.map((r) => ({
+      _id: r._id,
+      customerName: r.customerName,
+      storeName: r.storeName,
+      recruiter: r.recruiter,
+      subscriptionType: r.subscriptionType,
+      activationTiming: r.activationTiming,
+      documentStatus: r.documentStatus,
+      preOrderNumber: r.preOrderNumber,
+    }));
+  },
+});
+
+export const manualMatch = mutation({
+  args: {
+    inventoryId: v.id("inventory"),
+    reservationId: v.id("reservations"),
+  },
+  handler: async (ctx, args) => {
+    const item = await ctx.db.get(args.inventoryId);
+    if (!item) throw new Error("재고 항목을 찾을 수 없습니다.");
+    if (item.isMatched) throw new Error("이미 매칭된 재고입니다.");
+    if (item.isTransferred) throw new Error("타점출고된 재고는 배정할 수 없습니다.");
+
+    const reservation = await ctx.db.get(args.reservationId);
+    if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
+    if (reservation.status === "완료") throw new Error("이미 매칭된 예약입니다.");
+
+    await ctx.db.patch(args.reservationId, {
+      status: "완료",
+      matchedSerialNumber: item.serialNumber,
+    });
+    await ctx.db.patch(args.inventoryId, { isMatched: true });
+  },
+});
+
 export const create = mutation({
   args: {
     groupId: v.id("groups"),

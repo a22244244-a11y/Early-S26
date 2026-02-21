@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
@@ -35,19 +34,14 @@ export function Header() {
   }[user.role];
 
   return (
-    <motion.header
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="border-b bg-white sticky top-0 z-50"
-    >
+    <header className="border-b bg-white sticky top-0 z-50">
       <div className="container mx-auto flex h-14 items-center justify-between px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
           <span className="text-lg font-bold tracking-tight">
             S26 예약관리
           </span>
           {user.groupName && (
-            <Badge variant="outline" className="text-xs">
+            <Badge variant="outline" className="text-xs shrink-0">
               {user.groupName}
             </Badge>
           )}
@@ -79,6 +73,6 @@ export function Header() {
           </div>
         </div>
       </div>
-    </motion.header>
+    </header>
   );
 }

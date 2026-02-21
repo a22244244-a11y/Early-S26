@@ -43,6 +43,19 @@ export function InventoryTable() {
   const unmatchInventory = useMutation(api.inventory.unmatchInventory);
   const transferInventory = useMutation(api.inventory.transfer);
 
+  const manualMatch = useMutation(api.inventory.manualMatch);
+
+  const [assignDialog, setAssignDialog] = useState<{
+    id: string;
+    serial: string;
+    model: string;
+    color: string;
+  } | null>(null);
+  const assignableReservations = useQuery(
+    api.inventory.assignableReservations,
+    assignDialog ? { inventoryId: assignDialog.id as Id<"inventory"> } : "skip"
+  );
+
   const [transferDialog, setTransferDialog] = useState<{
     id: string;
     serial: string;
@@ -90,6 +103,20 @@ export function InventoryTable() {
       setTransferNote("");
     } catch (error: any) {
       toast.error(error.message || "타점출고에 실패했습니다.");
+    }
+  }
+
+  async function handleAssign(reservationId: string) {
+    if (!assignDialog) return;
+    try {
+      await manualMatch({
+        inventoryId: assignDialog.id as Id<"inventory">,
+        reservationId: reservationId as Id<"reservations">,
+      });
+      toast.success("배정이 완료되었습니다.");
+      setAssignDialog(null);
+    } catch (error: any) {
+      toast.error(error.message || "배정에 실패했습니다.");
     }
   }
 
@@ -191,6 +218,21 @@ export function InventoryTable() {
                           )}
                           {!item.isMatched && !item.isTransferred && (
                             <Button
+                              size="sm"
+                              onClick={() =>
+                                setAssignDialog({
+                                  id: item._id,
+                                  serial: item.serialNumber,
+                                  model: item.model,
+                                  color: item.color,
+                                })
+                              }
+                            >
+                              배정
+                            </Button>
+                          )}
+                          {!item.isMatched && !item.isTransferred && (
+                            <Button
                               variant="secondary"
                               size="sm"
                               onClick={() =>
@@ -262,6 +304,70 @@ export function InventoryTable() {
               취소
             </Button>
             <Button onClick={handleTransfer}>출고 처리</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* 배정 다이얼로그 */}
+      <Dialog
+        open={!!assignDialog}
+        onOpenChange={(open) => {
+          if (!open) setAssignDialog(null);
+        }}
+      >
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>고객 배정</DialogTitle>
+            <DialogDescription>
+              {assignDialog?.model} / {assignDialog?.color} (
+              {assignDialog?.serial}) 재고를 배정할 고객을 선택하세요.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-80 overflow-y-auto">
+            {assignableReservations === undefined ? (
+              <p className="text-center text-muted-foreground py-4">
+                로딩 중...
+              </p>
+            ) : assignableReservations.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                배정 가능한 대기 고객이 없습니다.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {assignableReservations.map((r) => (
+                  <div
+                    key={r._id}
+                    className="flex items-center justify-between border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="font-medium">{r.customerName}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {r.storeName} / {r.recruiter} / {r.subscriptionType}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {r.activationTiming}
+                        {r.documentStatus === "작성완료" && (
+                          <Badge variant="default" className="ml-2 text-xs">서류완료</Badge>
+                        )}
+                        {r.preOrderNumber && (
+                          <span className="ml-2 text-green-600">사전예약: {r.preOrderNumber}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => handleAssign(r._id)}
+                    >
+                      배정
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialog(null)}>
+              닫기
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

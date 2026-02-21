@@ -306,7 +306,7 @@ export function ReservationForm() {
                     <RadioGroup
                       onValueChange={field.onChange}
                       value={field.value}
-                      className="flex gap-4"
+                      className="flex flex-row gap-4"
                     >
                       {SUBSCRIPTION_TYPES.map((type) => (
                         <div key={type} className="flex items-center gap-2">

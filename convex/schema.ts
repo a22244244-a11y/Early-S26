@@ -30,7 +30,8 @@ export const colorValidator = v.union(
 
 export const reservationStatusValidator = v.union(
   v.literal("대기"),
-  v.literal("완료")
+  v.literal("완료"),
+  v.literal("취소")
 );
 
 export const documentStatusValidator = v.union(
