@@ -7,7 +7,7 @@ export type Model = (typeof MODELS)[number];
 export const COLORS_BY_MODEL: Record<Model, readonly string[]> = {
   S26: ["블랙", "화이트", "코발트 바이올렛", "스카이 블루"],
   "S26+": ["블랙", "화이트", "코발트 바이올렛", "스카이 블루"],
-  Ultra: [
+  S26Ultra: [
     "블랙",
     "화이트",
     "코발트 바이올렛",
