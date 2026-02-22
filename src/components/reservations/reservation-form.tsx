@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,13 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -58,7 +65,14 @@ export function ReservationForm() {
   const { groupId } = useAuth();
   const stores = useGroupStores();
   const createReservation = useMutation(api.reservations.create);
+  const groupLinks = useQuery(
+    api.groupLinks.get,
+    groupId ? { groupId: groupId as Id<"groups"> } : "skip"
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successDialog, setSuccessDialog] = useState<{
+    subscriptionType: string;
+  } | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -100,6 +114,7 @@ export function ReservationForm() {
         preOrderNumber: values.preOrderNumber || undefined,
       });
       toast.success("예약이 등록되었습니다.");
+      setSuccessDialog({ subscriptionType: values.subscriptionType });
       form.reset();
     } catch (error) {
       toast.error("예약 등록에 실패했습니다.");
@@ -108,7 +123,24 @@ export function ReservationForm() {
     }
   }
 
+  function getOnsaleUrl(subscriptionType: string) {
+    if (!groupLinks) return null;
+    switch (subscriptionType) {
+      case "010신규":
+        return groupLinks.onsaleNewUrl || null;
+      case "기변":
+        return groupLinks.onsaleDeviceChangeUrl || null;
+      case "MNP":
+        return groupLinks.onsaleMNPUrl || null;
+      default:
+        return null;
+    }
+  }
+
+  const preOrderUrl = groupLinks?.preOrderUrl || "https://pre-salemobile.uplus.co.kr";
+
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>예약 등록</CardTitle>
@@ -330,5 +362,50 @@ export function ReservationForm() {
         </Form>
       </CardContent>
     </Card>
+
+    <Dialog
+      open={!!successDialog}
+      onOpenChange={(open) => {
+        if (!open) setSuccessDialog(null);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>예약 등록 완료</DialogTitle>
+          <DialogDescription>
+            예약이 성공적으로 등록되었습니다. 다음 단계를 진행하세요.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex flex-col gap-3 pt-2">
+          {successDialog && getOnsaleUrl(successDialog.subscriptionType) && (
+            <a
+              href={getOnsaleUrl(successDialog.subscriptionType)!}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button className="w-full" size="lg">
+                온세일 작성
+              </Button>
+            </a>
+          )}
+          <a
+            href={preOrderUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button variant="outline" className="w-full" size="lg">
+              공식홈페이지 등록
+            </Button>
+          </a>
+          <Button
+            variant="ghost"
+            onClick={() => setSuccessDialog(null)}
+          >
+            닫기
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

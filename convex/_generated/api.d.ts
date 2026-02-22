@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
+import type * as groupLinks from "../groupLinks.js";
 import type * as inventory from "../inventory.js";
 import type * as matching from "../matching.js";
 import type * as reservations from "../reservations.js";
@@ -24,6 +25,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   auth: typeof auth;
+  groupLinks: typeof groupLinks;
   inventory: typeof inventory;
   matching: typeof matching;
   reservations: typeof reservations;

@@ -34,7 +34,7 @@ interface AuthContextType {
   groupId: Id<"groups"> | null;
 }
 
-const ADMIN_ONLY_PATHS = ["/inventory", "/matching"];
+const ADMIN_ONLY_PATHS = ["/inventory", "/matching", "/settings"];
 const SUPER_ADMIN_ONLY_PATHS = ["/admin"];
 
 const AuthContext = createContext<AuthContextType | null>(null);

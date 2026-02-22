@@ -12,6 +12,7 @@ const allNavItems = [
   { href: "/reservations", label: "예약 등록", adminOnly: false, superOnly: false },
   { href: "/inventory", label: "재고 관리", adminOnly: true, superOnly: false },
   { href: "/matching", label: "자동 매칭", adminOnly: true, superOnly: false },
+  { href: "/settings", label: "설정", adminOnly: true, superOnly: false },
   { href: "/admin", label: "시스템 관리", adminOnly: false, superOnly: true },
 ];
 

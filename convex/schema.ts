@@ -104,4 +104,12 @@ export default defineSchema({
     .index("by_model_color_matched", ["model", "color", "isMatched"])
     .index("by_serial", ["serialNumber"])
     .index("by_group", ["groupId"]),
+
+  groupLinks: defineTable({
+    groupId: v.id("groups"),
+    preOrderUrl: v.optional(v.string()),
+    onsaleDeviceChangeUrl: v.optional(v.string()),
+    onsaleMNPUrl: v.optional(v.string()),
+    onsaleNewUrl: v.optional(v.string()),
+  }).index("by_group", ["groupId"]),
 });
