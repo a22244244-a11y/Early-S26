@@ -82,10 +82,25 @@ export const assignableReservations = query({
       .withIndex("by_model_color_status", (q) =>
         q.eq("model", item.model).eq("color", item.color).eq("status", "대기")
       )
+      .order("asc")
       .collect();
+
+    // 우선순위: MNP우선 > 서류작성완료+등록순 > 서류미작성+등록순
+    reservations.sort((a, b) => {
+      const aIsMNP = a.subscriptionType === "MNP" ? 0 : 1;
+      const bIsMNP = b.subscriptionType === "MNP" ? 0 : 1;
+      if (aIsMNP !== bIsMNP) return aIsMNP - bIsMNP;
+
+      const aDocDone = a.documentStatus === "작성완료" ? 0 : 1;
+      const bDocDone = b.documentStatus === "작성완료" ? 0 : 1;
+      if (aDocDone !== bDocDone) return aDocDone - bDocDone;
+
+      return a._creationTime - b._creationTime;
+    });
 
     return reservations.map((r) => ({
       _id: r._id,
+      _creationTime: r._creationTime,
       customerName: r.customerName,
       storeName: r.storeName,
       recruiter: r.recruiter,

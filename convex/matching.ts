@@ -11,9 +11,14 @@ export const preview = query({
       )
       .collect();
     // 서류 작성완료된 예약만 매칭 대상
-    const pendingReservations = allPending.filter(
-      (r) => r.documentStatus === "작성완료"
-    );
+    const pendingReservations = allPending
+      .filter((r) => r.documentStatus === "작성완료")
+      .sort((a, b) => {
+        const aIsMNP = a.subscriptionType === "MNP" ? 0 : 1;
+        const bIsMNP = b.subscriptionType === "MNP" ? 0 : 1;
+        if (aIsMNP !== bIsMNP) return aIsMNP - bIsMNP;
+        return a._creationTime - b._creationTime;
+      });
 
     const allInventory = await ctx.db
       .query("inventory")
@@ -81,10 +86,15 @@ export const execute = mutation({
         q.eq("groupId", args.groupId).eq("status", "대기")
       )
       .collect();
-    // 서류 작성완료된 예약만 매칭 대상
-    const pendingReservations = allPending.filter(
-      (r) => r.documentStatus === "작성완료"
-    );
+    // 서류 작성완료된 예약만 매칭 대상, MNP 우선 + 등록순
+    const pendingReservations = allPending
+      .filter((r) => r.documentStatus === "작성완료")
+      .sort((a, b) => {
+        const aIsMNP = a.subscriptionType === "MNP" ? 0 : 1;
+        const bIsMNP = b.subscriptionType === "MNP" ? 0 : 1;
+        if (aIsMNP !== bIsMNP) return aIsMNP - bIsMNP;
+        return a._creationTime - b._creationTime;
+      });
 
     const modelColorPairs = new Set<string>();
     for (const r of pendingReservations) {

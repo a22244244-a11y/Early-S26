@@ -36,6 +36,15 @@ import { useAuth } from "@/lib/auth";
 import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
 import { Id } from "../../../convex/_generated/dataModel";
 
+function formatTime(ts: number) {
+  const d = new Date(ts);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${mm}/${dd} ${hh}:${mi}`;
+}
+
 const DOC_STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" }> = {
   미작성: { label: "미작성", variant: "secondary" },
   작성완료: { label: "작성완료", variant: "default" },
@@ -189,6 +198,7 @@ export function ReservationList() {
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                         <span>{r.model} / {r.color}</span>
                         <span>{r.activationTiming}</span>
+                        <span>{formatTime(r._creationTime)}</span>
                       </div>
                       <div className="text-sm">
                         사전예약번호:{" "}
@@ -293,6 +303,7 @@ export function ReservationList() {
                       <TableHead>고객명</TableHead>
                       <TableHead>모델</TableHead>
                       <TableHead>색상</TableHead>
+                      <TableHead>등록시간</TableHead>
                       <TableHead>개통시점</TableHead>
                       <TableHead>사전예약번호</TableHead>
                       <TableHead>상태</TableHead>
@@ -315,6 +326,7 @@ export function ReservationList() {
                           <TableCell className="font-medium">{r.customerName}</TableCell>
                           <TableCell>{r.model}</TableCell>
                           <TableCell>{r.color}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{formatTime(r._creationTime)}</TableCell>
                           <TableCell className="text-sm">{r.activationTiming}</TableCell>
                           <TableCell className="text-sm">
                             {r.preOrderNumber ? (

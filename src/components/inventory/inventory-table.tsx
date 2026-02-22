@@ -339,7 +339,12 @@ export function InventoryTable() {
                     className="flex items-center justify-between border rounded-lg p-3 hover:bg-muted/50 transition-colors"
                   >
                     <div className="space-y-0.5">
-                      <div className="font-medium">{r.customerName}</div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{r.customerName}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(r._creationTime).toLocaleDateString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                      </div>
                       <div className="text-sm text-muted-foreground">
                         {r.storeName} / {r.recruiter} / {r.subscriptionType}
                       </div>
