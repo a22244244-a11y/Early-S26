@@ -245,7 +245,7 @@ export function InventoryTable() {
                               타점출고
                             </Button>
                           )}
-                          {!item.isMatched && !item.isTransferred && (
+                          {!item.isMatched && (
                             <Button
                               variant="destructive"
                               size="sm"
