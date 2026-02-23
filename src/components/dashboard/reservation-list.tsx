@@ -208,6 +208,7 @@ export function ReservationList() {
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                         <span>{r.model} / {r.color}</span>
+                        <span>유치자: {r.recruiter}</span>
                         <span>{r.activationTiming}</span>
                         <span>{formatTime(r._creationTime)}</span>
                       </div>
@@ -312,6 +313,7 @@ export function ReservationList() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>고객명</TableHead>
+                      <TableHead>유치자</TableHead>
                       <TableHead>모델</TableHead>
                       <TableHead>색상</TableHead>
                       <TableHead>등록시간</TableHead>
@@ -336,6 +338,7 @@ export function ReservationList() {
                           className={`border-b transition-colors hover:bg-muted/50 ${isCancelled ? "opacity-50" : ""}`}
                         >
                           <TableCell className="font-medium">{r.customerName}</TableCell>
+                          <TableCell className="text-sm">{r.recruiter}</TableCell>
                           <TableCell>{r.model}</TableCell>
                           <TableCell>{r.color}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{formatTime(r._creationTime)}</TableCell>

@@ -247,10 +247,26 @@ export function SuperadminOverview() {
                     </TableHeader>
                     <TableBody>
                       {g.storeBreakdown.map((store) => (
-                        <TableRow key={store.pCode}>
-                          <TableCell className="font-medium">{store.storeName}</TableCell>
+                        <TableRow
+                          key={store.pCode}
+                          className={store.total === 0 ? "bg-red-50" : ""}
+                        >
+                          <TableCell className="font-medium">
+                            {store.storeName}
+                            {store.total === 0 && (
+                              <Badge variant="destructive" className="ml-2 text-xs">
+                                예약없음
+                              </Badge>
+                            )}
+                          </TableCell>
                           <TableCell className="text-muted-foreground">{store.pCode}</TableCell>
-                          <TableCell className="text-center">{store.total}</TableCell>
+                          <TableCell className="text-center">
+                            {store.total === 0 ? (
+                              <span className="font-bold text-red-600">0</span>
+                            ) : (
+                              store.total
+                            )}
+                          </TableCell>
                           <TableCell className="text-center">
                             {store.pending > 0 ? (
                               <Badge variant="secondary">{store.pending}</Badge>
@@ -274,6 +290,102 @@ export function SuperadminOverview() {
             </Card>
           </motion.div>
         ))}
+
+      {/* 전체 매장별 예약 순위 */}
+      {(() => {
+        const allStores = groups.flatMap((g) =>
+          g.storeBreakdown.map((store) => ({
+            ...store,
+            groupName: g.groupName,
+          }))
+        );
+        allStores.sort((a, b) => b.total - a.total);
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>전체 매장별 예약 순위</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-center w-12">순위</TableHead>
+                        <TableHead>매장명</TableHead>
+                        <TableHead>그룹</TableHead>
+                        <TableHead>P코드</TableHead>
+                        <TableHead className="text-center">총 예약</TableHead>
+                        <TableHead className="text-center">대기</TableHead>
+                        <TableHead className="text-center">완료</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {allStores.map((store, i) => (
+                        <TableRow
+                          key={`${store.groupName}-${store.pCode}`}
+                          className={store.total === 0 ? "bg-red-50" : ""}
+                        >
+                          <TableCell className="text-center font-bold">
+                            {i < 3 && store.total > 0 ? (
+                              <span className={
+                                i === 0 ? "text-yellow-500" : i === 1 ? "text-gray-400" : "text-amber-600"
+                              }>
+                                {i + 1}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">{i + 1}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {store.storeName}
+                            {store.total === 0 && (
+                              <Badge variant="destructive" className="ml-2 text-xs">
+                                예약없음
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {store.groupName}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {store.pCode}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.total === 0 ? (
+                              <span className="font-bold text-red-600">0</span>
+                            ) : (
+                              <span className="font-bold">{store.total}</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.pending > 0 ? (
+                              <Badge variant="secondary">{store.pending}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {store.completed > 0 ? (
+                              <Badge variant="default">{store.completed}</Badge>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       {/* 선택된 그룹의 예약 고객 리스트 */}
       {selectedGroup && (
@@ -316,6 +428,7 @@ export function SuperadminOverview() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>고객명</TableHead>
+                        <TableHead>유치자</TableHead>
                         <TableHead>매장</TableHead>
                         <TableHead>모델</TableHead>
                         <TableHead>색상</TableHead>
@@ -339,6 +452,9 @@ export function SuperadminOverview() {
                         >
                           <TableCell className="font-medium">
                             {r.customerName}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {r.recruiter}
                           </TableCell>
                           <TableCell className="text-sm">
                             {r.storeName}
