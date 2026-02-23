@@ -75,8 +75,11 @@ export function ReservationList() {
   const [selectedModelColor, setSelectedModelColor] = useState("");
   const [preOrderNumber, setPreOrderNumber] = useState("");
 
+  const [showCompleted, setShowCompleted] = useState(false);
+
   // 대기 + 취소 예약 표시 (완료 제외)
   const visibleReservations = reservations?.filter((r) => r.status === "대기" || r.status === "취소") ?? [];
+  const completedReservations = reservations?.filter((r) => r.status === "완료") ?? [];
   const pendingCount = visibleReservations.filter((r) => r.status === "대기").length;
 
   async function handleDocStatus(id: string) {
@@ -192,11 +195,16 @@ export function ReservationList() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-base">{r.customerName}</span>
-                        {isCancelled ? (
-                          <Badge variant="destructive">취소</Badge>
-                        ) : (
-                          <Badge variant={config.variant}>{config.label}</Badge>
-                        )}
+                        <div className="flex gap-1">
+                          {isCancelled ? (
+                            <Badge variant="destructive">취소</Badge>
+                          ) : (
+                            <>
+                              <Badge variant="outline" className="text-orange-600 border-orange-300">미배정</Badge>
+                              <Badge variant={config.variant}>{config.label}</Badge>
+                            </>
+                          )}
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
                         <span>{r.model} / {r.color}</span>
@@ -309,7 +317,8 @@ export function ReservationList() {
                       <TableHead>등록시간</TableHead>
                       <TableHead>개통시점</TableHead>
                       <TableHead>사전예약번호</TableHead>
-                      <TableHead>상태</TableHead>
+                      <TableHead>배정</TableHead>
+                      <TableHead>서류</TableHead>
                       <TableHead>작업</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -342,6 +351,11 @@ export function ReservationList() {
                             {isCancelled ? (
                               <Badge variant="destructive">취소</Badge>
                             ) : (
+                              <Badge variant="outline" className="text-orange-600 border-orange-300">미배정</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {!isCancelled && (
                               <Badge variant={config.variant}>{config.label}</Badge>
                             )}
                           </TableCell>
@@ -429,6 +443,99 @@ export function ReservationList() {
             </>
           )}
         </CardContent>
+      </Card>
+
+      {/* 배정완료 고객 */}
+      <Card>
+        <CardHeader
+          className="cursor-pointer"
+          onClick={() => setShowCompleted(!showCompleted)}
+        >
+          <CardTitle className="flex items-center gap-2">
+            배정완료 고객
+            <Badge variant="default" className="bg-green-600">
+              {completedReservations.length}건
+            </Badge>
+            <span className="text-sm font-normal text-muted-foreground ml-auto">
+              {showCompleted ? "접기" : "펼치기"}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        {showCompleted && (
+          <CardContent>
+            {completedReservations.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">
+                배정완료된 고객이 없습니다.
+              </p>
+            ) : (
+              <>
+                {/* Mobile */}
+                <div className="space-y-3 md:hidden">
+                  {completedReservations.map((r, i) => (
+                    <motion.div
+                      key={r._id}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.03 }}
+                      className="border rounded-lg p-3 space-y-1 bg-green-50"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold">{r.customerName}</span>
+                        <Badge variant="default" className="bg-green-600">배정완료</Badge>
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {r.model} / {r.color}
+                      </div>
+                      <div className="text-sm">
+                        일련번호: <span className="font-mono font-medium">{r.matchedSerialNumber}</span>
+                      </div>
+                      {r.storeName && (
+                        <div className="text-xs text-muted-foreground">{r.storeName}</div>
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+                {/* Desktop */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>고객명</TableHead>
+                        <TableHead>매장</TableHead>
+                        <TableHead>모델</TableHead>
+                        <TableHead>색상</TableHead>
+                        <TableHead>배정 일련번호</TableHead>
+                        <TableHead>가입유형</TableHead>
+                        <TableHead>상태</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {completedReservations.map((r, i) => (
+                        <motion.tr
+                          key={r._id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.03 }}
+                          className="border-b transition-colors hover:bg-muted/50"
+                        >
+                          <TableCell className="font-medium">{r.customerName}</TableCell>
+                          <TableCell className="text-sm">{r.storeName}</TableCell>
+                          <TableCell>{r.model}</TableCell>
+                          <TableCell>{r.color}</TableCell>
+                          <TableCell className="font-mono text-sm">{r.matchedSerialNumber}</TableCell>
+                          <TableCell className="text-sm">{r.subscriptionType}</TableCell>
+                          <TableCell>
+                            <Badge variant="default" className="bg-green-600">배정완료</Badge>
+                          </TableCell>
+                        </motion.tr>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
+            )}
+          </CardContent>
+        )}
       </Card>
 
       {/* 색상변경 다이얼로그 */}
