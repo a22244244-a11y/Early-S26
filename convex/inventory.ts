@@ -77,13 +77,15 @@ export const assignableReservations = query({
     const item = await ctx.db.get(args.inventoryId);
     if (!item) throw new Error("재고 항목을 찾을 수 없습니다.");
 
-    const reservations = await ctx.db
+    const allReservations = await ctx.db
       .query("reservations")
       .withIndex("by_model_color_status", (q) =>
         q.eq("model", item.model).eq("color", item.color).eq("status", "대기")
       )
       .order("asc")
       .collect();
+    // 같은 그룹의 예약만 필터
+    const reservations = allReservations.filter((r) => r.groupId === item.groupId);
 
     // 우선순위: MNP우선 > 서류작성완료+등록순 > 서류미작성+등록순
     reservations.sort((a, b) => {
