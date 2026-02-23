@@ -12,8 +12,6 @@ export const COLORS_BY_MODEL: Record<Model, readonly string[]> = {
     "화이트",
     "코발트 바이올렛",
     "스카이 블루",
-    "핑크 골드",
-    "실버 섀도우",
   ],
 };
 
