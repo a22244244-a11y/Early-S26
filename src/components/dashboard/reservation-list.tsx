@@ -51,10 +51,13 @@ const DOC_STATUS_CONFIG: Record<string, { label: string; variant: "default" | "s
 };
 
 export function ReservationList() {
-  const { groupId, isAdmin } = useAuth();
+  const { groupId, isAdmin, user } = useAuth();
+  const storeName = !isAdmin ? user?.storeName : undefined;
   const reservations = useQuery(
     api.reservations.list,
-    groupId ? { groupId: groupId as Id<"groups"> } : "skip"
+    groupId
+      ? { groupId: groupId as Id<"groups">, storeName }
+      : "skip"
   );
   const updateDocumentStatus = useMutation(api.reservations.updateDocumentStatus);
   const cancelReservation = useMutation(api.reservations.cancel);

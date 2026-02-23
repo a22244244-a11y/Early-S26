@@ -62,7 +62,7 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function ReservationForm() {
-  const { groupId } = useAuth();
+  const { groupId, isAdmin, user } = useAuth();
   const stores = useGroupStores();
   const createReservation = useMutation(api.reservations.create);
   const groupLinks = useQuery(
@@ -74,10 +74,13 @@ export function ReservationForm() {
     subscriptionType: string;
   } | null>(null);
 
+  const isStaff = !isAdmin;
+  const staffStoreName = user?.storeName;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      storeName: undefined,
+      storeName: staffStoreName || undefined,
       recruiter: "",
       subscriptionType: "010신규",
       customerName: "",
@@ -115,7 +118,7 @@ export function ReservationForm() {
       });
       toast.success("예약이 등록되었습니다.");
       setSuccessDialog({ subscriptionType: values.subscriptionType });
-      form.reset();
+      form.reset({ storeName: staffStoreName || undefined });
     } catch (error) {
       toast.error("예약 등록에 실패했습니다.");
     } finally {
@@ -155,6 +158,11 @@ export function ReservationForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>매장</FormLabel>
+                    {isStaff && staffStoreName ? (
+                      <FormControl>
+                        <Input value={staffStoreName} disabled />
+                      </FormControl>
+                    ) : (
                     <Select
                       onValueChange={field.onChange}
                       value={field.value}
@@ -172,6 +180,7 @@ export function ReservationForm() {
                         ))}
                       </SelectContent>
                     </Select>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}
