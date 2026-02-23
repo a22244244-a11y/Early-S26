@@ -80,16 +80,26 @@ export function SuperadminOverview() {
       reservations: acc.reservations + g.reservation.total,
       pending: acc.pending + g.reservation.pending,
       completed: acc.completed + g.reservation.completed,
+      docReady: acc.docReady + g.reservation.docReady,
+      hasPreOrder: acc.hasPreOrder + g.reservation.hasPreOrder,
       inventory: acc.inventory + g.inventory.total,
       available: acc.available + g.inventory.available,
       matched: acc.matched + g.inventory.matched,
       transferred: acc.transferred + g.inventory.transferred,
     }),
-    { groups: 0, stores: 0, reservations: 0, pending: 0, completed: 0, inventory: 0, available: 0, matched: 0, transferred: 0 }
+    { groups: 0, stores: 0, reservations: 0, pending: 0, completed: 0, docReady: 0, hasPreOrder: 0, inventory: 0, available: 0, matched: 0, transferred: 0 }
   );
 
   const totalMatchRate = totals.reservations > 0
     ? Math.round((totals.completed / totals.reservations) * 100)
+    : 0;
+
+  const totalDocRate = totals.reservations > 0
+    ? Math.round((totals.docReady / totals.reservations) * 100)
+    : 0;
+
+  const totalPreOrderRate = totals.reservations > 0
+    ? Math.round((totals.hasPreOrder / totals.reservations) * 100)
     : 0;
 
   const summaryCards = [
@@ -97,12 +107,14 @@ export function SuperadminOverview() {
     { title: "전체 예약", value: totals.reservations, sub: `대기 ${totals.pending} / 완료 ${totals.completed}`, color: "text-blue-600" },
     { title: "전체 재고", value: totals.inventory, sub: `가용 ${totals.available} / 매칭 ${totals.matched}${totals.transferred > 0 ? ` / 출고 ${totals.transferred}` : ""}`, color: "text-green-600" },
     { title: "전체 매칭률", value: `${totalMatchRate}%`, sub: `${totals.completed} / ${totals.reservations}건`, color: totalMatchRate >= 80 ? "text-green-600" : totalMatchRate >= 50 ? "text-yellow-600" : "text-red-600" },
+    { title: "서류작성완료율", value: `${totalDocRate}%`, sub: `${totals.docReady} / ${totals.reservations}건`, color: totalDocRate >= 80 ? "text-green-600" : totalDocRate >= 50 ? "text-yellow-600" : "text-red-600" },
+    { title: "사전예약번호 입력", value: `${totalPreOrderRate}%`, sub: `${totals.hasPreOrder} / ${totals.reservations}건`, color: totalPreOrderRate >= 80 ? "text-green-600" : totalPreOrderRate >= 50 ? "text-yellow-600" : "text-red-600" },
   ];
 
   return (
     <div className="space-y-6">
       {/* 전체 요약 카드 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {summaryCards.map((card, i) => (
           <motion.div
             key={card.title}

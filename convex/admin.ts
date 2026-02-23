@@ -203,7 +203,9 @@ export const groupOverview = query({
       const totalReservations = reservations.length;
       const pendingReservations = reservations.filter((r) => r.status === "대기").length;
       const completedReservations = reservations.filter((r) => r.status === "완료").length;
-      const docReady = reservations.filter((r) => r.documentStatus === "작성완료").length;
+      const activeReservations = reservations.filter((r) => r.status !== "취소");
+      const docReady = activeReservations.filter((r) => r.documentStatus === "작성완료").length;
+      const hasPreOrder = activeReservations.filter((r) => !!r.preOrderNumber).length;
 
       // 재고 현황
       const inventory = await ctx.db
@@ -244,6 +246,7 @@ export const groupOverview = query({
           pending: pendingReservations,
           completed: completedReservations,
           docReady,
+          hasPreOrder,
         },
         inventory: {
           total: totalInventory,

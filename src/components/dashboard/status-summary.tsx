@@ -20,7 +20,7 @@ export function StatusSummary() {
 
   if (!reservationCounts || !inventoryCounts) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         {[1, 2, 3].map((i) => (
           <Card key={i} className="animate-pulse">
             <CardHeader>
@@ -37,9 +37,13 @@ export function StatusSummary() {
 
   let totalReservations = 0;
   let matchedReservations = 0;
+  let docCompletedCount = 0;
+  let hasPreOrderCount = 0;
   for (const entry of reservationCounts) {
     totalReservations += entry.total;
     matchedReservations += entry.matched;
+    docCompletedCount += entry.docCompleted;
+    hasPreOrderCount += entry.hasPreOrder;
   }
   const pendingReservations = totalReservations - matchedReservations;
 
@@ -56,6 +60,16 @@ export function StatusSummary() {
   const matchRate =
     totalReservations > 0
       ? Math.round((matchedReservations / totalReservations) * 100)
+      : 0;
+
+  const docRate =
+    totalReservations > 0
+      ? Math.round((docCompletedCount / totalReservations) * 100)
+      : 0;
+
+  const preOrderRate =
+    totalReservations > 0
+      ? Math.round((hasPreOrderCount / totalReservations) * 100)
       : 0;
 
   const cards = [
@@ -82,10 +96,32 @@ export function StatusSummary() {
             ? "text-yellow-600"
             : "text-red-600",
     },
+    {
+      title: "서류작성완료율",
+      value: `${docRate}%`,
+      sub: `${docCompletedCount} / ${totalReservations}건 작성완료`,
+      color:
+        docRate >= 80
+          ? "text-green-600"
+          : docRate >= 50
+            ? "text-yellow-600"
+            : "text-red-600",
+    },
+    {
+      title: "사전예약번호 입력",
+      value: `${preOrderRate}%`,
+      sub: `${hasPreOrderCount} / ${totalReservations}건 입력완료`,
+      color:
+        preOrderRate >= 80
+          ? "text-green-600"
+          : preOrderRate >= 50
+            ? "text-yellow-600"
+            : "text-red-600",
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
       {cards.map((card, i) => (
         <motion.div
           key={card.title}

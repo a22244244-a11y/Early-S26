@@ -37,13 +37,16 @@ export const countByModelColor = query({
       .query("reservations")
       .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
       .collect();
-    const map = new Map<string, { model: string; color: string; total: number; matched: number }>();
+    const map = new Map<string, { model: string; color: string; total: number; matched: number; docCompleted: number; hasPreOrder: number }>();
     for (const r of all) {
+      if (r.status === "취소") continue;
       const key = `${r.model}__${r.color}`;
-      if (!map.has(key)) map.set(key, { model: r.model, color: r.color, total: 0, matched: 0 });
+      if (!map.has(key)) map.set(key, { model: r.model, color: r.color, total: 0, matched: 0, docCompleted: 0, hasPreOrder: 0 });
       const entry = map.get(key)!;
       entry.total++;
       if (r.status === "완료") entry.matched++;
+      if (r.documentStatus === "작성완료") entry.docCompleted++;
+      if (r.preOrderNumber) entry.hasPreOrder++;
     }
     return Array.from(map.values());
   },
