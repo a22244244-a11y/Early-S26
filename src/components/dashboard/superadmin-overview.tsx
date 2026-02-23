@@ -16,6 +16,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Id } from "../../../convex/_generated/dataModel";
 
 function formatTime(ts: number) {
@@ -27,8 +33,11 @@ function formatTime(ts: number) {
   return `${mm}/${dd} ${hh}:${mi}`;
 }
 
+type DetailType = "doc" | "preOrder" | null;
+
 export function SuperadminOverview() {
   const groups = useQuery(api.admin.groupOverview);
+  const [detailType, setDetailType] = useState<DetailType>(null);
   const [selectedGroup, setSelectedGroup] = useState<{
     id: string;
     name: string;
@@ -107,9 +116,9 @@ export function SuperadminOverview() {
     { title: "전체 예약", value: totals.reservations, sub: `대기 ${totals.pending} / 완료 ${totals.completed}`, color: "text-blue-600" },
     { title: "전체 재고", value: totals.inventory, sub: `가용 ${totals.available} / 매칭 ${totals.matched}${totals.transferred > 0 ? ` / 출고 ${totals.transferred}` : ""}`, color: "text-green-600" },
     { title: "전체 매칭률", value: `${totalMatchRate}%`, sub: `${totals.completed} / ${totals.reservations}건`, color: totalMatchRate >= 80 ? "text-green-600" : totalMatchRate >= 50 ? "text-yellow-600" : "text-red-600" },
-    { title: "서류작성완료율", value: `${totalDocRate}%`, sub: `${totals.docReady} / ${totals.reservations}건`, color: totalDocRate >= 80 ? "text-green-600" : totalDocRate >= 50 ? "text-yellow-600" : "text-red-600" },
-    { title: "사전예약번호 입력", value: `${totalPreOrderRate}%`, sub: `${totals.hasPreOrder} / ${totals.reservations}건`, color: totalPreOrderRate >= 80 ? "text-green-600" : totalPreOrderRate >= 50 ? "text-yellow-600" : "text-red-600" },
-  ];
+    { title: "서류작성완료율", value: `${totalDocRate}%`, sub: `${totals.docReady} / ${totals.reservations}건`, color: totalDocRate >= 80 ? "text-green-600" : totalDocRate >= 50 ? "text-yellow-600" : "text-red-600", clickable: true, onClick: () => setDetailType("doc") },
+    { title: "사전예약번호 입력", value: `${totalPreOrderRate}%`, sub: `${totals.hasPreOrder} / ${totals.reservations}건`, color: totalPreOrderRate >= 80 ? "text-green-600" : totalPreOrderRate >= 50 ? "text-yellow-600" : "text-red-600", clickable: true, onClick: () => setDetailType("preOrder") },
+  ] as const;
 
   return (
     <div className="space-y-6">
@@ -122,10 +131,16 @@ export function SuperadminOverview() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card>
+            <Card
+              className={"clickable" in card && card.clickable ? "cursor-pointer hover:bg-muted/50 transition-colors" : ""}
+              onClick={"onClick" in card ? card.onClick : undefined}
+            >
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {card.title}
+                  {"clickable" in card && card.clickable && (
+                    <span className="ml-1 text-xs">▶</span>
+                  )}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -264,12 +279,12 @@ export function SuperadminOverview() {
                           className={store.total === 0 ? "bg-red-50" : ""}
                         >
                           <TableCell className="font-medium">
-                            {store.storeName}
                             {store.total === 0 && (
-                              <Badge variant="destructive" className="ml-2 text-xs">
-                                예약없음
+                              <Badge variant="destructive" className="mr-2 text-xs">
+                                무실적
                               </Badge>
                             )}
+                            {store.storeName}
                           </TableCell>
                           <TableCell className="text-muted-foreground">{store.pCode}</TableCell>
                           <TableCell className="text-center">
@@ -354,12 +369,12 @@ export function SuperadminOverview() {
                             )}
                           </TableCell>
                           <TableCell className="font-medium">
-                            {store.storeName}
                             {store.total === 0 && (
-                              <Badge variant="destructive" className="ml-2 text-xs">
-                                예약없음
+                              <Badge variant="destructive" className="mr-2 text-xs">
+                                무실적
                               </Badge>
                             )}
+                            {store.storeName}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {store.groupName}
@@ -520,6 +535,68 @@ export function SuperadminOverview() {
           </Card>
         </motion.div>
       )}
+      {/* 서류/사전예약 상세 다이얼로그 */}
+      <Dialog open={!!detailType} onOpenChange={(open) => { if (!open) setDetailType(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {detailType === "doc" ? "그룹별 서류작성 현황" : "그룹별 사전예약번호 입력 현황"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>그룹명</TableHead>
+                  <TableHead className="text-center">총 예약</TableHead>
+                  <TableHead className="text-center">
+                    {detailType === "doc" ? "작성완료" : "입력완료"}
+                  </TableHead>
+                  <TableHead className="text-center">
+                    {detailType === "doc" ? "미작성" : "미입력"}
+                  </TableHead>
+                  <TableHead className="text-center">비율</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {groups.map((g) => {
+                  const total = g.reservation.total;
+                  const done = detailType === "doc" ? g.reservation.docReady : g.reservation.hasPreOrder;
+                  const notDone = total - done;
+                  const rate = total > 0 ? Math.round((done / total) * 100) : 0;
+                  return (
+                    <TableRow key={g.groupId}>
+                      <TableCell className="font-medium">{g.groupName}</TableCell>
+                      <TableCell className="text-center">{total}</TableCell>
+                      <TableCell className="text-center">
+                        {done > 0 ? (
+                          <Badge variant="default">{done}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {notDone > 0 ? (
+                          <Badge variant="destructive">{notDone}</Badge>
+                        ) : (
+                          <span className="text-muted-foreground">0</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className={`font-bold ${
+                          rate >= 80 ? "text-green-600" : rate >= 50 ? "text-yellow-600" : total === 0 ? "text-muted-foreground" : "text-red-600"
+                        }`}>
+                          {rate}%
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
