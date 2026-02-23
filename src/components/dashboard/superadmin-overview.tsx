@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { motion } from "framer-motion";
@@ -14,9 +15,31 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Id } from "../../../convex/_generated/dataModel";
+
+function formatTime(ts: number) {
+  const d = new Date(ts);
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mi = String(d.getMinutes()).padStart(2, "0");
+  return `${mm}/${dd} ${hh}:${mi}`;
+}
 
 export function SuperadminOverview() {
   const groups = useQuery(api.admin.groupOverview);
+  const [selectedGroup, setSelectedGroup] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  const groupReservations = useQuery(
+    api.reservations.list,
+    selectedGroup
+      ? { groupId: selectedGroup.id as Id<"groups"> }
+      : "skip"
+  );
 
   if (!groups) {
     return (
@@ -129,7 +152,16 @@ export function SuperadminOverview() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 }}
-                    className="border-b"
+                    className={`border-b cursor-pointer transition-colors hover:bg-muted/50 ${
+                      selectedGroup?.id === g.groupId ? "bg-muted" : ""
+                    }`}
+                    onClick={() =>
+                      setSelectedGroup(
+                        selectedGroup?.id === g.groupId
+                          ? null
+                          : { id: g.groupId, name: g.groupName }
+                      )
+                    }
                   >
                     <TableCell className="font-medium">{g.groupName}</TableCell>
                     <TableCell className="text-center">{g.storeCount}</TableCell>
@@ -242,6 +274,124 @@ export function SuperadminOverview() {
             </Card>
           </motion.div>
         ))}
+
+      {/* 선택된 그룹의 예약 고객 리스트 */}
+      {selectedGroup && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {selectedGroup.name} - 예약 고객 리스트
+                  {groupReservations && (
+                    <Badge variant="secondary">
+                      {groupReservations.length}건
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedGroup(null)}
+                >
+                  닫기
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {!groupReservations ? (
+                <p className="text-center text-muted-foreground py-4">
+                  로딩 중...
+                </p>
+              ) : groupReservations.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">
+                  등록된 예약이 없습니다.
+                </p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>고객명</TableHead>
+                        <TableHead>매장</TableHead>
+                        <TableHead>모델</TableHead>
+                        <TableHead>색상</TableHead>
+                        <TableHead>가입유형</TableHead>
+                        <TableHead>개통시점</TableHead>
+                        <TableHead>사전예약번호</TableHead>
+                        <TableHead>등록시간</TableHead>
+                        <TableHead>상태</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {groupReservations.map((r, i) => (
+                        <motion.tr
+                          key={r._id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.02 }}
+                          className={`border-b transition-colors hover:bg-muted/50 ${
+                            r.status === "취소" ? "opacity-50" : ""
+                          }`}
+                        >
+                          <TableCell className="font-medium">
+                            {r.customerName}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {r.storeName}
+                          </TableCell>
+                          <TableCell>{r.model}</TableCell>
+                          <TableCell>{r.color}</TableCell>
+                          <TableCell className="text-sm">
+                            {r.subscriptionType}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {r.activationTiming}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {r.preOrderNumber ? (
+                              <span className="text-green-600 font-medium">
+                                {r.preOrderNumber}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {formatTime(r._creationTime)}
+                          </TableCell>
+                          <TableCell>
+                            {r.status === "완료" ? (
+                              <Badge
+                                variant="default"
+                                className="bg-green-600"
+                              >
+                                배정완료
+                              </Badge>
+                            ) : r.status === "취소" ? (
+                              <Badge variant="destructive">취소</Badge>
+                            ) : (
+                              <Badge
+                                variant="outline"
+                                className="text-orange-600 border-orange-300"
+                              >
+                                대기
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </motion.tr>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 }
