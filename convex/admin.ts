@@ -226,9 +226,12 @@ export const groupOverview = query({
       // 매장별 예약 현황
       const storeBreakdown = stores.map((store) => {
         const storeReservations = reservations.filter((r) => r.storeName === store.name);
+        const storeActive = storeReservations.filter((r) => r.status !== "취소");
         const storePending = storeReservations.filter((r) => r.status === "대기").length;
         const storeCompleted = storeReservations.filter((r) => r.status === "완료").length;
         const storeCancelled = storeReservations.filter((r) => r.status === "취소").length;
+        const storeDocReady = storeActive.filter((r) => r.documentStatus === "작성완료").length;
+        const storeHasPreOrder = storeActive.filter((r) => !!r.preOrderNumber).length;
         return {
           storeName: store.name,
           pCode: store.pCode,
@@ -236,6 +239,8 @@ export const groupOverview = query({
           pending: storePending,
           completed: storeCompleted,
           cancelled: storeCancelled,
+          docReady: storeDocReady,
+          hasPreOrder: storeHasPreOrder,
         };
       });
 

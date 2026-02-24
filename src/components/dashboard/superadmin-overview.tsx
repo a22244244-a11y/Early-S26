@@ -284,6 +284,8 @@ export function SuperadminOverview() {
                         <TableHead className="text-center">총 예약</TableHead>
                         <TableHead className="text-center">대기</TableHead>
                         <TableHead className="text-center">완료</TableHead>
+                        <TableHead className="text-center">서류완료</TableHead>
+                        <TableHead className="text-center">사전예약</TableHead>
                         <TableHead className="text-center">취소</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -324,11 +326,39 @@ export function SuperadminOverview() {
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            {store.cancelled > 0 ? (
-                              <Badge variant="destructive">{store.cancelled}</Badge>
-                            ) : (
-                              <span className="text-muted-foreground">0</span>
-                            )}
+                            {(() => {
+                              const active = store.total - store.cancelled;
+                              const rate = active > 0 ? Math.round((store.docReady / active) * 100) : 0;
+                              return (
+                                <span className={`text-sm ${rate >= 80 ? "text-green-600" : rate >= 50 ? "text-yellow-600" : active === 0 ? "text-muted-foreground" : "text-red-600"}`}>
+                                  {store.docReady}/{active} <span className="font-bold">({rate}%)</span>
+                                </span>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {(() => {
+                              const active = store.total - store.cancelled;
+                              const rate = active > 0 ? Math.round((store.hasPreOrder / active) * 100) : 0;
+                              return (
+                                <span className={`text-sm ${rate >= 80 ? "text-green-600" : rate >= 50 ? "text-yellow-600" : active === 0 ? "text-muted-foreground" : "text-red-600"}`}>
+                                  {store.hasPreOrder}/{active} <span className="font-bold">({rate}%)</span>
+                                </span>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {(() => {
+                              const rate = store.total > 0 ? Math.round((store.cancelled / store.total) * 100) : 0;
+                              return store.cancelled > 0 ? (
+                                <span className="text-sm text-red-600">
+                                  <Badge variant="destructive">{store.cancelled}</Badge>
+                                  <span className="ml-1 font-bold">({rate}%)</span>
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">0</span>
+                              );
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -371,6 +401,8 @@ export function SuperadminOverview() {
                         <TableHead className="text-center">총 예약</TableHead>
                         <TableHead className="text-center">대기</TableHead>
                         <TableHead className="text-center">완료</TableHead>
+                        <TableHead className="text-center">서류완료</TableHead>
+                        <TableHead className="text-center">사전예약</TableHead>
                         <TableHead className="text-center">취소</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -427,11 +459,39 @@ export function SuperadminOverview() {
                             )}
                           </TableCell>
                           <TableCell className="text-center">
-                            {store.cancelled > 0 ? (
-                              <Badge variant="destructive">{store.cancelled}</Badge>
-                            ) : (
-                              <span className="text-muted-foreground">0</span>
-                            )}
+                            {(() => {
+                              const active = store.total - store.cancelled;
+                              const rate = active > 0 ? Math.round((store.docReady / active) * 100) : 0;
+                              return (
+                                <span className={`text-sm ${rate >= 80 ? "text-green-600" : rate >= 50 ? "text-yellow-600" : active === 0 ? "text-muted-foreground" : "text-red-600"}`}>
+                                  {store.docReady}/{active} <span className="font-bold">({rate}%)</span>
+                                </span>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {(() => {
+                              const active = store.total - store.cancelled;
+                              const rate = active > 0 ? Math.round((store.hasPreOrder / active) * 100) : 0;
+                              return (
+                                <span className={`text-sm ${rate >= 80 ? "text-green-600" : rate >= 50 ? "text-yellow-600" : active === 0 ? "text-muted-foreground" : "text-red-600"}`}>
+                                  {store.hasPreOrder}/{active} <span className="font-bold">({rate}%)</span>
+                                </span>
+                              );
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {(() => {
+                              const rate = store.total > 0 ? Math.round((store.cancelled / store.total) * 100) : 0;
+                              return store.cancelled > 0 ? (
+                                <span className="text-sm text-red-600">
+                                  <Badge variant="destructive">{store.cancelled}</Badge>
+                                  <span className="ml-1 font-bold">({rate}%)</span>
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">0</span>
+                              );
+                            })()}
                           </TableCell>
                         </TableRow>
                       ))}
