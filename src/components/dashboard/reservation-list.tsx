@@ -34,6 +34,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
 import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
+import { exportReservationsToExcel } from "@/lib/export-excel";
 import { Id } from "../../../convex/_generated/dataModel";
 
 function formatTime(ts: number) {
@@ -169,6 +170,19 @@ export function ReservationList() {
             예약 고객 리스트
             {pendingCount > 0 && (
               <Badge variant="secondary">{pendingCount}건 대기</Badge>
+            )}
+            {isAdmin && reservations && reservations.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+                onClick={() => {
+                  const today = new Date().toISOString().slice(0, 10);
+                  exportReservationsToExcel(reservations, `예약목록_${today}`);
+                }}
+              >
+                엑셀 다운로드
+              </Button>
             )}
           </CardTitle>
         </CardHeader>

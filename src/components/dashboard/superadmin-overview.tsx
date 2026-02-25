@@ -23,6 +23,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Id } from "../../../convex/_generated/dataModel";
+import { exportReservationsToExcel } from "@/lib/export-excel";
 
 function formatTime(ts: number) {
   const d = new Date(ts);
@@ -521,13 +522,30 @@ export function SuperadminOverview() {
                     </Badge>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedGroup(null)}
-                >
-                  닫기
-                </Button>
+                <div className="flex items-center gap-2">
+                  {groupReservations && groupReservations.length > 0 && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const today = new Date().toISOString().slice(0, 10);
+                        exportReservationsToExcel(
+                          groupReservations,
+                          `${selectedGroup.name}_예약목록_${today}`
+                        );
+                      }}
+                    >
+                      엑셀 다운로드
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedGroup(null)}
+                  >
+                    닫기
+                  </Button>
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
