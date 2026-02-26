@@ -3,6 +3,7 @@
 import { PageTransition } from "@/components/layout/page-transition";
 import { StatusSummary } from "@/components/dashboard/status-summary";
 import { ModelStatusTable } from "@/components/dashboard/model-status-table";
+import { GroupPivotTable } from "@/components/dashboard/group-pivot-table";
 import { AvailableStock } from "@/components/dashboard/available-stock";
 import { ReservationList } from "@/components/dashboard/reservation-list";
 import { SuperadminOverview } from "@/components/dashboard/superadmin-overview";
@@ -55,6 +56,7 @@ export default function DashboardPage() {
             <AvailableStock />
             <ReservationList />
             {isAdmin && <ModelStatusTable />}
+            {isAdmin && <GroupPivotTable />}
           </>
         )}
       </div>

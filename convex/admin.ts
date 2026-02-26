@@ -329,6 +329,37 @@ export const reservationPivot = query({
   },
 });
 
+export const groupReservationPivot = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const group = await ctx.db.get(args.groupId);
+    if (!group) return null;
+
+    const stores = await ctx.db
+      .query("stores")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+
+    const active = reservations.filter((r) => r.status !== "취소");
+
+    const storeRows = stores.map((store) => {
+      const storeRes = active.filter((r) => r.storeName === store.name);
+      return { name: store.name, ...aggregatePivot(storeRes) };
+    });
+
+    return {
+      groupName: group.name,
+      groupPivot: aggregatePivot(active),
+      stores: storeRows,
+    };
+  },
+});
+
 // ========== Users ==========
 
 export const listUsers = query({
