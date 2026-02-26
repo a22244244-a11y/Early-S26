@@ -277,12 +277,19 @@ export const groupOverview = query({
 function aggregatePivot(reservations: Array<{ model: string; color: string; subscriptionType: string }>) {
   const total = reservations.length;
   const mnpTotal = reservations.filter((r) => r.subscriptionType === "MNP").length;
-  const byModel: Record<string, { total: number; mnp: number; colors: Record<string, number> }> = {};
+  const colorCounts: Record<string, Record<string, number>> = {};
+  const byModel: Record<string, { total: number; mnp: number; colorCounts: Array<{ color: string; count: number }> }> = {};
   for (const r of reservations) {
-    if (!byModel[r.model]) byModel[r.model] = { total: 0, mnp: 0, colors: {} };
+    if (!byModel[r.model]) {
+      byModel[r.model] = { total: 0, mnp: 0, colorCounts: [] };
+      colorCounts[r.model] = {};
+    }
     byModel[r.model].total += 1;
-    byModel[r.model].colors[r.color] = (byModel[r.model].colors[r.color] || 0) + 1;
+    colorCounts[r.model][r.color] = (colorCounts[r.model][r.color] || 0) + 1;
     if (r.subscriptionType === "MNP") byModel[r.model].mnp += 1;
+  }
+  for (const model of Object.keys(byModel)) {
+    byModel[model].colorCounts = Object.entries(colorCounts[model]).map(([color, count]) => ({ color, count }));
   }
   return { total, mnpTotal, byModel };
 }

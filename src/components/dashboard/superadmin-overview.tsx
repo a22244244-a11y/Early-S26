@@ -514,21 +514,28 @@ export function SuperadminOverview() {
         const getColors = (model: string) => COLORS_BY_MODEL[model as Model] || [];
 
         // 전체 합산
-        const grandTotal = { total: 0, mnpTotal: 0, byModel: {} as Record<string, { total: number; mnp: number; colors: Record<string, number> }> };
+        const grandTotal = { total: 0, mnpTotal: 0, byModel: {} as Record<string, { total: number; mnp: number; colorCounts: Array<{ color: string; count: number }> }> };
+        const grandColorMaps: Record<string, Record<string, number>> = {};
         for (const g of pivotData) {
           grandTotal.total += g.groupPivot.total;
           grandTotal.mnpTotal += g.groupPivot.mnpTotal;
           for (const [model, data] of Object.entries(g.groupPivot.byModel)) {
-            if (!grandTotal.byModel[model]) grandTotal.byModel[model] = { total: 0, mnp: 0, colors: {} };
+            if (!grandTotal.byModel[model]) {
+              grandTotal.byModel[model] = { total: 0, mnp: 0, colorCounts: [] };
+              grandColorMaps[model] = {};
+            }
             grandTotal.byModel[model].total += data.total;
             grandTotal.byModel[model].mnp += data.mnp;
-            for (const [color, count] of Object.entries(data.colors)) {
-              grandTotal.byModel[model].colors[color] = (grandTotal.byModel[model].colors[color] || 0) + count;
+            for (const cc of data.colorCounts) {
+              grandColorMaps[model][cc.color] = (grandColorMaps[model][cc.color] || 0) + cc.count;
             }
           }
         }
+        for (const model of Object.keys(grandTotal.byModel)) {
+          grandTotal.byModel[model].colorCounts = Object.entries(grandColorMaps[model]).map(([color, count]) => ({ color, count }));
+        }
 
-        type PivotRow = { total: number; mnpTotal: number; byModel: Record<string, { total: number; mnp: number; colors: Record<string, number> }> };
+        type PivotRow = { total: number; mnpTotal: number; byModel: Record<string, { total: number; mnp: number; colorCounts: Array<{ color: string; count: number }> }> };
         const renderRow = (label: string, data: PivotRow, bold: boolean, bg?: string) => (
           <TableRow key={label} className={bg || ""}>
             <TableCell className={`whitespace-nowrap sticky left-0 bg-white z-10 ${bold ? "font-bold" : ""} ${bg || ""}`}>
@@ -544,7 +551,7 @@ export function SuperadminOverview() {
                 </TableCell>,
                 ...getColors(model).map((color) => (
                   <TableCell key={`${model}-${color}`} className="text-center">
-                    {md?.colors[color] || 0}
+                    {md?.colorCounts.find(c => c.color === color)?.count || 0}
                   </TableCell>
                 )),
                 <TableCell key={`${model}-mnp`} className="text-center text-blue-600">
