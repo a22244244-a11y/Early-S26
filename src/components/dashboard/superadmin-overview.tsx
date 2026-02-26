@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { motion } from "framer-motion";
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Id } from "../../../convex/_generated/dataModel";
 import { exportReservationsToExcel } from "@/lib/export-excel";
+import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
 
 function formatTime(ts: number) {
   const d = new Date(ts);
@@ -50,6 +51,8 @@ export function SuperadminOverview() {
       ? { groupId: selectedGroup.id as Id<"groups"> }
       : "skip"
   );
+
+  const pivotData = useQuery(api.admin.reservationPivot);
 
   if (!groups) {
     return (
@@ -495,6 +498,114 @@ export function SuperadminOverview() {
                             })()}
                           </TableCell>
                         </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })()}
+
+      {/* 모델/색상별 피벗 테이블 */}
+      {pivotData && pivotData.length > 0 && (() => {
+        const modelList = MODELS as readonly string[];
+        const getColors = (model: string) => COLORS_BY_MODEL[model as Model] || [];
+
+        // 전체 합산
+        const grandTotal = { total: 0, mnpTotal: 0, byModel: {} as Record<string, { total: number; mnp: number; colors: Record<string, number> }> };
+        for (const g of pivotData) {
+          grandTotal.total += g.groupPivot.total;
+          grandTotal.mnpTotal += g.groupPivot.mnpTotal;
+          for (const [model, data] of Object.entries(g.groupPivot.byModel)) {
+            if (!grandTotal.byModel[model]) grandTotal.byModel[model] = { total: 0, mnp: 0, colors: {} };
+            grandTotal.byModel[model].total += data.total;
+            grandTotal.byModel[model].mnp += data.mnp;
+            for (const [color, count] of Object.entries(data.colors)) {
+              grandTotal.byModel[model].colors[color] = (grandTotal.byModel[model].colors[color] || 0) + count;
+            }
+          }
+        }
+
+        type PivotRow = { total: number; mnpTotal: number; byModel: Record<string, { total: number; mnp: number; colors: Record<string, number> }> };
+        const renderRow = (label: string, data: PivotRow, bold: boolean, bg?: string) => (
+          <TableRow key={label} className={bg || ""}>
+            <TableCell className={`whitespace-nowrap sticky left-0 bg-white z-10 ${bold ? "font-bold" : ""} ${bg || ""}`}>
+              {label}
+            </TableCell>
+            <TableCell className={`text-center ${bold ? "font-bold" : ""}`}>{data.total || 0}</TableCell>
+            <TableCell className={`text-center ${bold ? "font-bold" : ""}`}>{data.mnpTotal || 0}</TableCell>
+            {modelList.map((model) => {
+              const md = data.byModel[model];
+              return [
+                <TableCell key={`${model}-t`} className={`text-center font-semibold ${bold ? "font-bold" : ""}`}>
+                  {md?.total || 0}
+                </TableCell>,
+                ...getColors(model).map((color) => (
+                  <TableCell key={`${model}-${color}`} className="text-center">
+                    {md?.colors[color] || 0}
+                  </TableCell>
+                )),
+                <TableCell key={`${model}-mnp`} className="text-center text-blue-600">
+                  {md?.mnp || 0}
+                </TableCell>,
+              ];
+            })}
+          </TableRow>
+        );
+
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Card>
+              <CardHeader>
+                <CardTitle>모델/색상별 예약 현황</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table className="text-xs">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead rowSpan={2} className="sticky left-0 bg-white z-10 min-w-[100px]">
+                          대리점명
+                        </TableHead>
+                        <TableHead rowSpan={2} className="text-center min-w-[50px]">총계</TableHead>
+                        <TableHead rowSpan={2} className="text-center min-w-[50px]">MNP</TableHead>
+                        {modelList.map((model) => (
+                          <TableHead
+                            key={model}
+                            colSpan={getColors(model).length + 2}
+                            className="text-center border-l"
+                          >
+                            {model}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                      <TableRow>
+                        {modelList.map((model) => [
+                          <TableHead key={`${model}-t`} className="text-center border-l font-bold">합계</TableHead>,
+                          ...getColors(model).map((color) => (
+                            <TableHead key={`${model}-${color}`} className="text-center whitespace-nowrap">
+                              {color.replace("코발트 ", "").replace("스카이 ", "")}
+                            </TableHead>
+                          )),
+                          <TableHead key={`${model}-mnp`} className="text-center">MNP</TableHead>,
+                        ])}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {renderRow("전체", grandTotal, true, "bg-yellow-50")}
+                      {pivotData.map((g) => (
+                        <Fragment key={g.groupName}>
+                          {renderRow(g.groupName, g.groupPivot, true, "bg-gray-50")}
+                          {g.stores.map((store) =>
+                            renderRow(`  ${store.name}`, store, false)
+                          )}
+                        </Fragment>
                       ))}
                     </TableBody>
                   </Table>

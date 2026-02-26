@@ -272,6 +272,56 @@ export const groupOverview = query({
   },
 });
 
+// ========== Reservation Pivot (SuperAdmin) ==========
+
+function aggregatePivot(reservations: Array<{ model: string; color: string; subscriptionType: string }>) {
+  const total = reservations.length;
+  const mnpTotal = reservations.filter((r) => r.subscriptionType === "MNP").length;
+  const byModel: Record<string, { total: number; mnp: number; colors: Record<string, number> }> = {};
+  for (const r of reservations) {
+    if (!byModel[r.model]) byModel[r.model] = { total: 0, mnp: 0, colors: {} };
+    byModel[r.model].total += 1;
+    byModel[r.model].colors[r.color] = (byModel[r.model].colors[r.color] || 0) + 1;
+    if (r.subscriptionType === "MNP") byModel[r.model].mnp += 1;
+  }
+  return { total, mnpTotal, byModel };
+}
+
+export const reservationPivot = query({
+  args: {},
+  handler: async (ctx) => {
+    const groups = await ctx.db.query("groups").collect();
+    const result = [];
+
+    for (const group of groups) {
+      const stores = await ctx.db
+        .query("stores")
+        .withIndex("by_group", (q) => q.eq("groupId", group._id))
+        .collect();
+
+      const reservations = await ctx.db
+        .query("reservations")
+        .withIndex("by_group", (q) => q.eq("groupId", group._id))
+        .collect();
+
+      const active = reservations.filter((r) => r.status !== "취소");
+
+      const storeRows = stores.map((store) => {
+        const storeRes = active.filter((r) => r.storeName === store.name);
+        return { name: store.name, ...aggregatePivot(storeRes) };
+      });
+
+      result.push({
+        groupName: group.name,
+        groupPivot: aggregatePivot(active),
+        stores: storeRows,
+      });
+    }
+
+    return result;
+  },
+});
+
 // ========== Users ==========
 
 export const listUsers = query({
