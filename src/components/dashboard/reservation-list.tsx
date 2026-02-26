@@ -68,6 +68,8 @@ export function ReservationList() {
   const updatePreOrderNumber = useMutation(api.reservations.updatePreOrderNumber);
 
   // 다이얼로그 상태
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [detailReservation, setDetailReservation] = useState<any>(null);
   const [colorDialog, setColorDialog] = useState<{ id: string; model: string; color: string } | null>(null);
   const [modelDialog, setModelDialog] = useState<{ id: string; model: string; color: string } | null>(null);
   const [preOrderDialog, setPreOrderDialog] = useState<{ id: string; current: string } | null>(null);
@@ -236,6 +238,14 @@ export function ReservationList() {
                       </div>
                       {!isCancelled && (
                         <div className="grid grid-cols-2 gap-2 pt-1">
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="h-9 col-span-2"
+                            onClick={() => setDetailReservation(r)}
+                          >
+                            상세보기
+                          </Button>
                           {docStatus !== "작성완료" && (
                             <Button
                               size="sm"
@@ -304,16 +314,26 @@ export function ReservationList() {
                           </Button>
                         </div>
                       )}
-                      {isCancelled && isAdmin && (
-                        <div className="pt-1">
+                      {isCancelled && (
+                        <div className="grid grid-cols-2 gap-2 pt-1">
                           <Button
-                            variant="destructive"
+                            variant="secondary"
                             size="sm"
-                            className="h-9 w-full"
-                            onClick={() => handleDelete(r._id, r.customerName)}
+                            className={`h-9 ${isAdmin ? "" : "col-span-2"}`}
+                            onClick={() => setDetailReservation(r)}
                           >
-                            삭제
+                            상세보기
                           </Button>
+                          {isAdmin && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="h-9"
+                              onClick={() => handleDelete(r._id, r.customerName)}
+                            >
+                              삭제
+                            </Button>
+                          )}
                         </div>
                       )}
                     </motion.div>
@@ -377,8 +397,17 @@ export function ReservationList() {
                             )}
                           </TableCell>
                           <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => setDetailReservation(r)}
+                              >
+                                상세보기
+                              </Button>
+                            </div>
                             {!isCancelled && (
-                              <div className="flex flex-wrap gap-1">
+                              <div className="flex flex-wrap gap-1 mt-1">
                                 {docStatus !== "작성완료" && (
                                   <Button
                                     size="sm"
@@ -672,6 +701,86 @@ export function ReservationList() {
             </Button>
             <Button onClick={handlePreOrderNumber} disabled={!preOrderNumber.trim()}>
               저장
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 상세보기 다이얼로그 */}
+      <Dialog open={!!detailReservation} onOpenChange={() => setDetailReservation(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>예약 상세정보</DialogTitle>
+          </DialogHeader>
+          {detailReservation && (
+            <div className="space-y-3 py-2">
+              <div className="grid grid-cols-[100px_1fr] gap-y-3 text-sm">
+                <span className="text-muted-foreground">고객명</span>
+                <span className="font-medium">{detailReservation.customerName}</span>
+
+                <span className="text-muted-foreground">유치자</span>
+                <span>{detailReservation.recruiter}</span>
+
+                <span className="text-muted-foreground">매장</span>
+                <span>{detailReservation.storeName}</span>
+
+                <span className="text-muted-foreground">모델</span>
+                <span>{detailReservation.model}</span>
+
+                <span className="text-muted-foreground">색상</span>
+                <span>{detailReservation.color}</span>
+
+                <span className="text-muted-foreground">가입유형</span>
+                <span>{detailReservation.subscriptionType}</span>
+
+                <span className="text-muted-foreground">개통시점</span>
+                <span>{detailReservation.activationTiming}</span>
+
+                <span className="text-muted-foreground">제품번호</span>
+                <span className="font-mono">{detailReservation.productNumber}</span>
+
+                <span className="text-muted-foreground">사전예약번호</span>
+                <span>
+                  {detailReservation.preOrderNumber ? (
+                    <span className="text-green-600 font-medium">{detailReservation.preOrderNumber}</span>
+                  ) : (
+                    <span className="text-muted-foreground">미입력</span>
+                  )}
+                </span>
+
+                <span className="text-muted-foreground">서류상태</span>
+                <span>
+                  <Badge variant={detailReservation.documentStatus === "작성완료" ? "default" : "secondary"}>
+                    {detailReservation.documentStatus || "미작성"}
+                  </Badge>
+                </span>
+
+                <span className="text-muted-foreground">배정상태</span>
+                <span>
+                  {detailReservation.status === "완료" ? (
+                    <Badge variant="default" className="bg-green-600">배정완료</Badge>
+                  ) : detailReservation.status === "취소" ? (
+                    <Badge variant="destructive">취소</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-orange-600 border-orange-300">대기</Badge>
+                  )}
+                </span>
+
+                {detailReservation.matchedSerialNumber && (
+                  <>
+                    <span className="text-muted-foreground">배정 일련번호</span>
+                    <span className="font-mono font-medium">{detailReservation.matchedSerialNumber}</span>
+                  </>
+                )}
+
+                <span className="text-muted-foreground">등록일시</span>
+                <span>{formatTime(detailReservation._creationTime)}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailReservation(null)}>
+              닫기
             </Button>
           </DialogFooter>
         </DialogContent>
