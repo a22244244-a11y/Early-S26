@@ -8,6 +8,7 @@ import { AvailableStock } from "@/components/dashboard/available-stock";
 import { ReservationList } from "@/components/dashboard/reservation-list";
 import { SuperadminOverview } from "@/components/dashboard/superadmin-overview";
 import { GlobalRecruiterRanking, GlobalStoreRanking } from "@/components/dashboard/ranking-tables";
+import { StorePerformance } from "@/components/dashboard/store-performance";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "convex/react";
@@ -54,6 +55,7 @@ export default function DashboardPage() {
         ) : (
           <>
             <StatusSummary />
+            <StorePerformance />
             <AvailableStock />
             <ReservationList />
             <GlobalRecruiterRanking />

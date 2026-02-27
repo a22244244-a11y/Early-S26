@@ -294,6 +294,37 @@ function aggregatePivot(reservations: Array<{ model: string; color: string; subs
   return { total, mnpTotal, byModel };
 }
 
+// 그룹어드민용 매장별 성과
+export const groupStorePerformance = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const stores = await ctx.db
+      .query("stores")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+    const result = stores.map((store) => {
+      const sr = reservations.filter((r) => r.storeName === store.name);
+      const active = sr.filter((r) => r.status !== "취소");
+      return {
+        storeName: store.name,
+        pCode: store.pCode,
+        total: sr.length,
+        pending: sr.filter((r) => r.status === "대기").length,
+        completed: sr.filter((r) => r.status === "완료").length,
+        cancelled: sr.filter((r) => r.status === "취소").length,
+        docReady: active.filter((r) => r.documentStatus === "작성완료").length,
+        hasPreOrder: active.filter((r) => !!r.preOrderNumber).length,
+      };
+    });
+    result.sort((a, b) => b.total - a.total);
+    return result;
+  },
+});
+
 export const reservationPivot = query({
   args: {},
   handler: async (ctx) => {
