@@ -100,7 +100,7 @@ export function Header() {
                     </Badge>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-2" align="end">
+                <PopoverContent className="w-64 p-2 max-h-[70vh] overflow-y-auto" align="end">
                   <div className="space-y-1">
                     {/* 원래 관리자 보기 */}
                     <button
