@@ -360,6 +360,21 @@ export const groupReservationPivot = query({
   },
 });
 
+// 예약 데이터의 매장명 일괄 변경
+export const renameStoreName = mutation({
+  args: { oldName: v.string(), newName: v.string() },
+  handler: async (ctx, args) => {
+    const reservations = await ctx.db
+      .query("reservations")
+      .withIndex("by_store", (q) => q.eq("storeName", args.oldName))
+      .collect();
+    for (const r of reservations) {
+      await ctx.db.patch(r._id, { storeName: args.newName });
+    }
+    return { updated: reservations.length };
+  },
+});
+
 // ========== Users ==========
 
 export const listUsers = query({
