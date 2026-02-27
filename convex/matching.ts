@@ -28,7 +28,7 @@ export const preview = query({
 
     const inventoryMap: Record<string, typeof available> = {};
     for (const item of available) {
-      const key = `${item.model}__${item.color}`;
+      const key = `${item.model}__${item.color}__${item.storage || "512GB"}`;
       if (!inventoryMap[key]) inventoryMap[key] = [];
       inventoryMap[key].push(item);
     }
@@ -38,6 +38,7 @@ export const preview = query({
       customerName: string;
       model: string;
       color: string;
+      storage: string;
       serialNumber: string;
     }> = [];
     const unmatched: Array<{
@@ -45,12 +46,14 @@ export const preview = query({
       customerName: string;
       model: string;
       color: string;
+      storage: string;
     }> = [];
 
     const consumed = new Set<string>();
 
     for (const reservation of pendingReservations) {
-      const key = `${reservation.model}__${reservation.color}`;
+      const storage = reservation.storage || "512GB";
+      const key = `${reservation.model}__${reservation.color}__${storage}`;
       const pool = inventoryMap[key] || [];
       const availableItem = pool.find((i) => !consumed.has(i._id));
 
@@ -61,6 +64,7 @@ export const preview = query({
           customerName: reservation.customerName,
           model: reservation.model,
           color: reservation.color,
+          storage,
           serialNumber: availableItem.serialNumber,
         });
       } else {
@@ -69,6 +73,7 @@ export const preview = query({
           customerName: reservation.customerName,
           model: reservation.model,
           color: reservation.color,
+          storage,
         });
       }
     }
@@ -96,9 +101,9 @@ export const execute = mutation({
         return a._creationTime - b._creationTime;
       });
 
-    const modelColorPairs = new Set<string>();
+    const modelColorStoragePairs = new Set<string>();
     for (const r of pendingReservations) {
-      modelColorPairs.add(`${r.model}__${r.color}`);
+      modelColorStoragePairs.add(`${r.model}__${r.color}__${r.storage || "512GB"}`);
     }
 
     const inventoryMap: Record<
@@ -106,8 +111,8 @@ export const execute = mutation({
       Array<{ _id: string; serialNumber: string }>
     > = {};
 
-    for (const pair of modelColorPairs) {
-      const [model, color] = pair.split("__");
+    for (const triple of modelColorStoragePairs) {
+      const [model, color, storage] = triple.split("__");
       const items = await ctx.db
         .query("inventory")
         .withIndex("by_model_color_matched", (q) =>
@@ -117,9 +122,9 @@ export const execute = mutation({
             .eq("isMatched", false)
         )
         .collect();
-      // 그룹 내 재고만 필터
-      const groupItems = items.filter((i) => i.groupId === args.groupId);
-      inventoryMap[pair] = groupItems.map((i) => ({
+      // 그룹 내 + 같은 용량 재고만 필터
+      const groupItems = items.filter((i) => i.groupId === args.groupId && (i.storage || "512GB") === storage);
+      inventoryMap[triple] = groupItems.map((i) => ({
         _id: i._id,
         serialNumber: i.serialNumber,
       }));
@@ -129,7 +134,7 @@ export const execute = mutation({
     const usedIndexes: Record<string, number> = {};
 
     for (const reservation of pendingReservations) {
-      const key = `${reservation.model}__${reservation.color}`;
+      const key = `${reservation.model}__${reservation.color}__${reservation.storage || "512GB"}`;
       const pool = inventoryMap[key] || [];
       const currentIndex = usedIndexes[key] || 0;
 

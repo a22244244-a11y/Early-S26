@@ -28,13 +28,14 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
+import { MODELS, COLORS_BY_MODEL, STORAGES, type Model } from "@/lib/constants";
 import { useAuth } from "@/lib/auth";
 import { Id } from "../../../convex/_generated/dataModel";
 
 const singleFormSchema = z.object({
   model: z.enum(["S26", "S26+", "S26Ultra"]),
   color: z.string().min(1, "색상을 선택하세요"),
+  storage: z.enum(["256GB", "512GB", "1TB"]),
   serialNumber: z.string().min(1, "일련번호를 입력하세요"),
   arrivalDate: z.string().min(1, "입고일을 입력하세요"),
 });
@@ -42,6 +43,7 @@ const singleFormSchema = z.object({
 const bulkFormSchema = z.object({
   model: z.enum(["S26", "S26+", "S26Ultra"]),
   color: z.string().min(1, "색상을 선택하세요"),
+  storage: z.enum(["256GB", "512GB", "1TB"]),
   serialNumbers: z.string().min(1, "일련번호를 입력하세요"),
   arrivalDate: z.string().min(1, "입고일을 입력하세요"),
 });
@@ -57,6 +59,7 @@ export function InventoryForm() {
     defaultValues: {
       model: undefined,
       color: "",
+      storage: "512GB",
       serialNumber: "",
       arrivalDate: new Date().toISOString().split("T")[0],
     },
@@ -67,6 +70,7 @@ export function InventoryForm() {
     defaultValues: {
       model: undefined,
       color: "",
+      storage: "512GB",
       serialNumbers: "",
       arrivalDate: new Date().toISOString().split("T")[0],
     },
@@ -86,6 +90,7 @@ export function InventoryForm() {
         groupId: groupId as Id<"groups">,
         model: values.model,
         color: values.color as any,
+        storage: values.storage,
         serialNumber: values.serialNumber,
         arrivalDate: values.arrivalDate,
       });
@@ -93,6 +98,7 @@ export function InventoryForm() {
       singleForm.reset({
         model: values.model,
         color: values.color,
+        storage: values.storage,
         serialNumber: "",
         arrivalDate: values.arrivalDate,
       });
@@ -125,6 +131,7 @@ export function InventoryForm() {
         items: serials.map((serialNumber) => ({
           model: values.model,
           color: values.color as any,
+          storage: values.storage,
           serialNumber,
           arrivalDate: values.arrivalDate,
         })),
@@ -133,6 +140,7 @@ export function InventoryForm() {
       bulkForm.reset({
         model: values.model,
         color: values.color,
+        storage: values.storage,
         serialNumbers: "",
         arrivalDate: values.arrivalDate,
       });
@@ -149,7 +157,7 @@ export function InventoryForm() {
   ) {
     const colors = selectedModel ? COLORS_BY_MODEL[selectedModel] : [];
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <FormField
           control={form.control}
           name="model"
@@ -205,6 +213,34 @@ export function InventoryForm() {
                   {colors.map((color) => (
                     <SelectItem key={color} value={color}>
                       {color}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="storage"
+          render={({ field }: any) => (
+            <FormItem>
+              <FormLabel>용량</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="용량 선택" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {STORAGES.map((storage) => (
+                    <SelectItem key={storage} value={storage}>
+                      {storage}
                     </SelectItem>
                   ))}
                 </SelectContent>

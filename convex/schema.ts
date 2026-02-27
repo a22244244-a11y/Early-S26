@@ -34,6 +34,12 @@ export const reservationStatusValidator = v.union(
   v.literal("취소")
 );
 
+export const storageValidator = v.union(
+  v.literal("256GB"),
+  v.literal("512GB"),
+  v.literal("1TB")
+);
+
 export const documentStatusValidator = v.union(
   v.literal("미작성"),
   v.literal("작성완료"),
@@ -78,6 +84,7 @@ export default defineSchema({
     productNumber: v.string(),
     model: modelValidator,
     color: colorValidator,
+    storage: v.optional(storageValidator),
     activationTiming: v.string(),
     preOrderNumber: v.optional(v.string()),
     matchedSerialNumber: v.optional(v.string()),
@@ -95,6 +102,7 @@ export default defineSchema({
     groupId: v.optional(v.id("groups")),
     model: modelValidator,
     color: colorValidator,
+    storage: v.optional(storageValidator),
     serialNumber: v.string(),
     isMatched: v.boolean(),
     isTransferred: v.optional(v.boolean()),

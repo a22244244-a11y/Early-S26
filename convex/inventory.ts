@@ -1,6 +1,6 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { modelValidator, colorValidator } from "./schema";
+import { modelValidator, colorValidator, storageValidator } from "./schema";
 
 export const list = query({
   args: {
@@ -84,8 +84,10 @@ export const assignableReservations = query({
       )
       .order("asc")
       .collect();
-    // 같은 그룹의 예약만 필터
-    const reservations = allReservations.filter((r) => r.groupId === item.groupId);
+    // 같은 그룹 + 같은 용량의 예약만 필터
+    const reservations = allReservations.filter((r) =>
+      r.groupId === item.groupId && (r.storage || "512GB") === (item.storage || "512GB")
+    );
 
     // 우선순위: MNP우선 > 서류작성완료+등록순 > 서류미작성+등록순
     reservations.sort((a, b) => {
@@ -142,6 +144,7 @@ export const create = mutation({
     groupId: v.id("groups"),
     model: modelValidator,
     color: colorValidator,
+    storage: storageValidator,
     serialNumber: v.string(),
     arrivalDate: v.string(),
   },
@@ -169,6 +172,7 @@ export const createBulk = mutation({
       v.object({
         model: modelValidator,
         color: colorValidator,
+        storage: storageValidator,
         serialNumber: v.string(),
         arrivalDate: v.string(),
       })

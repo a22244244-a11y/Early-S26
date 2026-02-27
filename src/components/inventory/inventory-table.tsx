@@ -166,6 +166,7 @@ export function InventoryTable() {
                   <TableRow>
                     <TableHead>모델</TableHead>
                     <TableHead>색상</TableHead>
+                    <TableHead>용량</TableHead>
                     <TableHead>일련번호</TableHead>
                     <TableHead>입고일</TableHead>
                     <TableHead>상태</TableHead>
@@ -189,6 +190,7 @@ export function InventoryTable() {
                         {item.model}
                       </TableCell>
                       <TableCell>{item.color}</TableCell>
+                      <TableCell>{item.storage || "512GB"}</TableCell>
                       <TableCell className="font-mono text-sm">
                         {item.serialNumber}
                       </TableCell>

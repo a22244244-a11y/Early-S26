@@ -41,6 +41,7 @@ import {
   COLORS_BY_MODEL,
   SUBSCRIPTION_TYPES,
   ACTIVATION_TIMINGS,
+  STORAGES,
   type Model,
 } from "@/lib/constants";
 import { useAuth } from "@/lib/auth";
@@ -55,6 +56,7 @@ const formSchema = z.object({
   productNumber: z.string().min(1, "상품번호를 입력하세요"),
   model: z.enum(["S26", "S26+", "S26Ultra"]),
   color: z.string().min(1, "색상을 선택하세요"),
+  storage: z.enum(["256GB", "512GB", "1TB"]),
   activationTiming: z.string().min(1, "개통시점을 선택하세요"),
   preOrderNumber: z.string().optional(),
 });
@@ -87,6 +89,7 @@ export function ReservationForm() {
       productNumber: "",
       model: undefined,
       color: "",
+      storage: "512GB",
       activationTiming: "",
       preOrderNumber: "",
     },
@@ -113,6 +116,7 @@ export function ReservationForm() {
         productNumber: values.productNumber,
         model: values.model,
         color: values.color as any,
+        storage: values.storage,
         activationTiming: values.activationTiming,
         preOrderNumber: values.preOrderNumber || undefined,
       });
@@ -285,6 +289,34 @@ export function ReservationForm() {
                         {availableColors.map((color) => (
                           <SelectItem key={color} value={color}>
                             {color}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="storage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>용량</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="용량 선택" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {STORAGES.map((storage) => (
+                          <SelectItem key={storage} value={storage}>
+                            {storage}
                           </SelectItem>
                         ))}
                       </SelectContent>

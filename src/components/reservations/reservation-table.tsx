@@ -160,6 +160,7 @@ export function ReservationTable() {
                   <TableHead>가입구분</TableHead>
                   <TableHead>모델</TableHead>
                   <TableHead>색상</TableHead>
+                  <TableHead>용량</TableHead>
                   <TableHead>개통시점</TableHead>
                   <TableHead>사전예약번호</TableHead>
                   <TableHead>상태</TableHead>
@@ -184,6 +185,7 @@ export function ReservationTable() {
                     <TableCell>{r.subscriptionType}</TableCell>
                     <TableCell>{r.model}</TableCell>
                     <TableCell>{r.color}</TableCell>
+                    <TableCell>{r.storage || "512GB"}</TableCell>
                     <TableCell>{r.activationTiming}</TableCell>
                     <TableCell>
                       <PreOrderNumberCell

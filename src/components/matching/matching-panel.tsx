@@ -82,7 +82,7 @@ export function MatchingPanel() {
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
             대기 중인 예약을 등록 순서(선착순)대로 입고된 재고의 일련번호와
-            자동으로 매칭합니다. 동일한 모델/색상 기준으로 배정됩니다.
+            자동으로 매칭합니다. 동일한 모델/색상/용량 기준으로 배정됩니다.
           </p>
           <div className="flex gap-3">
             <Button
@@ -176,6 +176,7 @@ export function MatchingPanel() {
                         <TableHead>고객명</TableHead>
                         <TableHead>모델</TableHead>
                         <TableHead>색상</TableHead>
+                        <TableHead>용량</TableHead>
                         <TableHead>일련번호</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -193,6 +194,7 @@ export function MatchingPanel() {
                           </TableCell>
                           <TableCell>{m.model}</TableCell>
                           <TableCell>{m.color}</TableCell>
+                          <TableCell>{m.storage}</TableCell>
                           <TableCell className="font-mono text-xs">
                             {m.serialNumber}
                           </TableCell>
@@ -230,6 +232,7 @@ export function MatchingPanel() {
                         <TableHead>고객명</TableHead>
                         <TableHead>모델</TableHead>
                         <TableHead>색상</TableHead>
+                        <TableHead>용량</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -246,6 +249,7 @@ export function MatchingPanel() {
                           </TableCell>
                           <TableCell>{u.model}</TableCell>
                           <TableCell>{u.color}</TableCell>
+                          <TableCell>{u.storage}</TableCell>
                         </motion.tr>
                       ))}
                     </TableBody>

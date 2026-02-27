@@ -13,6 +13,7 @@ import type * as auth from "../auth.js";
 import type * as groupLinks from "../groupLinks.js";
 import type * as inventory from "../inventory.js";
 import type * as matching from "../matching.js";
+import type * as migrations from "../migrations.js";
 import type * as reservations from "../reservations.js";
 import type * as seed from "../seed.js";
 
@@ -28,6 +29,7 @@ declare const fullApi: ApiFromModules<{
   groupLinks: typeof groupLinks;
   inventory: typeof inventory;
   matching: typeof matching;
+  migrations: typeof migrations;
   reservations: typeof reservations;
   seed: typeof seed;
 }>;

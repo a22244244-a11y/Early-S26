@@ -25,6 +25,9 @@ export const ALL_COLORS = [
 ] as const;
 export type Color = (typeof ALL_COLORS)[number];
 
+export const STORAGES = ["256GB", "512GB", "1TB"] as const;
+export type Storage = (typeof STORAGES)[number];
+
 export const ACTIVATION_TIMINGS = [
   "당일개통_12시 이전",
   "당일개통_12시 이후",

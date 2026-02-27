@@ -4,6 +4,7 @@ import {
   subscriptionTypeValidator,
   modelValidator,
   colorValidator,
+  storageValidator,
   documentStatusValidator,
 } from "./schema";
 
@@ -165,6 +166,7 @@ export const create = mutation({
     productNumber: v.string(),
     model: modelValidator,
     color: colorValidator,
+    storage: storageValidator,
     activationTiming: v.string(),
     preOrderNumber: v.optional(v.string()),
   },
@@ -251,12 +253,15 @@ export const updateModel = mutation({
     id: v.id("reservations"),
     model: modelValidator,
     color: colorValidator,
+    storage: v.optional(storageValidator),
   },
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.id);
     if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
     if (reservation.status === "완료") throw new Error("매칭 완료된 예약은 변경할 수 없습니다.");
-    await ctx.db.patch(args.id, { model: args.model, color: args.color });
+    const patch: Record<string, unknown> = { model: args.model, color: args.color };
+    if (args.storage) patch.storage = args.storage;
+    await ctx.db.patch(args.id, patch as any);
   },
 });
 

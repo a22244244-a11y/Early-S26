@@ -223,7 +223,7 @@ export function ReservationList() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
-                        <span>{r.model} / {r.color}</span>
+                        <span>{r.model} / {r.color} / {r.storage || "512GB"}</span>
                         <span>유치자: {r.recruiter}</span>
                         <span>{r.activationTiming}</span>
                         <span>{formatTime(r._creationTime)}</span>
@@ -350,6 +350,7 @@ export function ReservationList() {
                       <TableHead>유치자</TableHead>
                       <TableHead>모델</TableHead>
                       <TableHead>색상</TableHead>
+                      <TableHead>용량</TableHead>
                       <TableHead>등록시간</TableHead>
                       <TableHead>개통시점</TableHead>
                       <TableHead>사전예약번호</TableHead>
@@ -375,6 +376,7 @@ export function ReservationList() {
                           <TableCell className="text-sm">{r.recruiter}</TableCell>
                           <TableCell>{r.model}</TableCell>
                           <TableCell>{r.color}</TableCell>
+                          <TableCell>{r.storage || "512GB"}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{formatTime(r._creationTime)}</TableCell>
                           <TableCell className="text-sm">{r.activationTiming}</TableCell>
                           <TableCell className="text-sm">
@@ -530,7 +532,7 @@ export function ReservationList() {
                         <Badge variant="default" className="bg-green-600">배정완료</Badge>
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {r.model} / {r.color}
+                        {r.model} / {r.color} / {r.storage || "512GB"}
                       </div>
                       <div className="text-sm">
                         일련번호: <span className="font-mono font-medium">{r.matchedSerialNumber}</span>
@@ -550,6 +552,7 @@ export function ReservationList() {
                         <TableHead>매장</TableHead>
                         <TableHead>모델</TableHead>
                         <TableHead>색상</TableHead>
+                        <TableHead>용량</TableHead>
                         <TableHead>배정 일련번호</TableHead>
                         <TableHead>가입유형</TableHead>
                         <TableHead>상태</TableHead>
@@ -568,6 +571,7 @@ export function ReservationList() {
                           <TableCell className="text-sm">{r.storeName}</TableCell>
                           <TableCell>{r.model}</TableCell>
                           <TableCell>{r.color}</TableCell>
+                          <TableCell>{r.storage || "512GB"}</TableCell>
                           <TableCell className="font-mono text-sm">{r.matchedSerialNumber}</TableCell>
                           <TableCell className="text-sm">{r.subscriptionType}</TableCell>
                           <TableCell>
@@ -729,6 +733,9 @@ export function ReservationList() {
 
                 <span className="text-muted-foreground">색상</span>
                 <span>{detailReservation.color}</span>
+
+                <span className="text-muted-foreground">용량</span>
+                <span>{detailReservation.storage || "512GB"}</span>
 
                 <span className="text-muted-foreground">가입유형</span>
                 <span>{detailReservation.subscriptionType}</span>
