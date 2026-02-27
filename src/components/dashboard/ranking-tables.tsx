@@ -34,7 +34,7 @@ export function RecruiterRanking() {
   if (!ranking) {
     return (
       <Card>
-        <CardHeader><CardTitle>유치자별 순위</CardTitle></CardHeader>
+        <CardHeader><CardTitle>전체 유치자별 순위</CardTitle></CardHeader>
         <CardContent><p className="text-center text-muted-foreground py-4">로딩 중...</p></CardContent>
       </Card>
     );
@@ -43,7 +43,7 @@ export function RecruiterRanking() {
   if (ranking.length === 0) {
     return (
       <Card>
-        <CardHeader><CardTitle>유치자별 순위</CardTitle></CardHeader>
+        <CardHeader><CardTitle>전체 유치자별 순위</CardTitle></CardHeader>
         <CardContent><p className="text-center text-muted-foreground py-4">등록된 예약이 없습니다.</p></CardContent>
       </Card>
     );
@@ -53,7 +53,7 @@ export function RecruiterRanking() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
       <Card>
         <CardHeader>
-          <CardTitle>유치자별 순위</CardTitle>
+          <CardTitle>전체 유치자별 순위</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -108,7 +108,7 @@ export function StoreRanking() {
   if (!ranking) {
     return (
       <Card>
-        <CardHeader><CardTitle>매장별 순위</CardTitle></CardHeader>
+        <CardHeader><CardTitle>전체 매장별 순위</CardTitle></CardHeader>
         <CardContent><p className="text-center text-muted-foreground py-4">로딩 중...</p></CardContent>
       </Card>
     );
@@ -117,7 +117,7 @@ export function StoreRanking() {
   if (ranking.length === 0) {
     return (
       <Card>
-        <CardHeader><CardTitle>매장별 순위</CardTitle></CardHeader>
+        <CardHeader><CardTitle>전체 매장별 순위</CardTitle></CardHeader>
         <CardContent><p className="text-center text-muted-foreground py-4">등록된 예약이 없습니다.</p></CardContent>
       </Card>
     );
@@ -129,7 +129,7 @@ export function StoreRanking() {
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
       <Card>
         <CardHeader>
-          <CardTitle>매장별 순위</CardTitle>
+          <CardTitle>전체 매장별 순위</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">

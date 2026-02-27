@@ -63,7 +63,7 @@ export const recruiterRanking = query({
     const active = all.filter((r) => r.status !== "취소");
     const map = new Map<string, { recruiter: string; storeName: string; total: number; mnp: number; completed: number; docReady: number; hasPreOrder: number }>();
     for (const r of active) {
-      const key = r.recruiter;
+      const key = `${r.recruiter}__${r.storeName}`;
       if (!map.has(key)) map.set(key, { recruiter: r.recruiter, storeName: r.storeName, total: 0, mnp: 0, completed: 0, docReady: 0, hasPreOrder: 0 });
       const e = map.get(key)!;
       e.total++;
