@@ -25,13 +25,24 @@ export interface User {
   storeName?: string;
 }
 
+export interface ViewAs {
+  role: "group_admin" | "staff";
+  groupId: string;
+  groupName: string;
+  storeId?: string;
+  storeName?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (loginId: string, password: string) => Promise<boolean>;
   logout: () => void;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isRealSuperAdmin: boolean;
   groupId: Id<"groups"> | null;
+  viewAs: ViewAs | null;
+  setViewAs: (va: ViewAs | null) => void;
 }
 
 const ADMIN_ONLY_PATHS = ["/inventory", "/matching", "/settings"];
@@ -42,6 +53,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [viewAs, setViewAs] = useState<ViewAs | null>(null);
   const router = useRouter();
   const pathname = usePathname();
   const convex = useConvex();
@@ -106,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   function logout() {
     setUser(null);
+    setViewAs(null);
     localStorage.removeItem("auth_user");
     router.replace("/login");
   }
@@ -118,13 +131,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  const isAdmin = user?.role === "super_admin" || user?.role === "group_admin";
-  const isSuperAdmin = user?.role === "super_admin";
-  const groupId = (user?.groupId as Id<"groups">) ?? null;
+  const isRealSuperAdmin = user?.role === "super_admin";
+
+  // viewAs가 설정되면 해당 역할로 전환
+  const effectiveRole = viewAs?.role ?? user?.role;
+  const isAdmin = effectiveRole === "super_admin" || effectiveRole === "group_admin";
+  const isSuperAdmin = viewAs ? false : isRealSuperAdmin;
+  const groupId = viewAs
+    ? (viewAs.groupId as Id<"groups">)
+    : (user?.groupId as Id<"groups">) ?? null;
 
   return (
     <AuthContext.Provider
-      value={{ user, login, logout, isAdmin: !!isAdmin, isSuperAdmin: !!isSuperAdmin, groupId }}
+      value={{
+        user: viewAs
+          ? { ...user!, groupId: viewAs.groupId, groupName: viewAs.groupName, storeId: viewAs.storeId, storeName: viewAs.storeName, role: viewAs.role }
+          : user,
+        login,
+        logout,
+        isAdmin: !!isAdmin,
+        isSuperAdmin: !!isSuperAdmin,
+        isRealSuperAdmin: !!isRealSuperAdmin,
+        groupId,
+        viewAs,
+        setViewAs,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -137,7 +168,10 @@ const defaultAuth: AuthContextType = {
   logout: () => {},
   isAdmin: false,
   isSuperAdmin: false,
+  isRealSuperAdmin: false,
   groupId: null,
+  viewAs: null,
+  setViewAs: () => {},
 };
 
 export function useAuth() {
