@@ -14,7 +14,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
+import { MODELS, COLORS_BY_MODEL, STORAGES, type Model } from "@/lib/constants";
 import { useAuth } from "@/lib/auth";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -45,6 +45,7 @@ export function ModelStatusTable() {
   const rows: Array<{
     model: string;
     color: string;
+    storage: string;
     reservations: number;
     matched: number;
     inventory: number;
@@ -55,31 +56,35 @@ export function ModelStatusTable() {
 
   const resMap = new Map<string, { total: number; matched: number }>();
   for (const entry of reservationCounts) {
-    resMap.set(`${entry.model}__${entry.color}`, { total: entry.total, matched: entry.matched });
+    resMap.set(`${entry.model}__${entry.color}__${entry.storage}`, { total: entry.total, matched: entry.matched });
   }
   const invMap = new Map<string, { total: number; available: number; transferred: number }>();
   for (const entry of inventoryCounts) {
-    invMap.set(`${entry.model}__${entry.color}`, { total: entry.total, available: entry.available, transferred: entry.transferred });
+    invMap.set(`${entry.model}__${entry.color}__${entry.storage}`, { total: entry.total, available: entry.available, transferred: entry.transferred });
   }
 
   for (const model of MODELS) {
     const colors = COLORS_BY_MODEL[model as Model];
     for (const color of colors) {
-      const key = `${model}__${color}`;
-      const res = resMap.get(key) || { total: 0, matched: 0 };
-      const inv = invMap.get(key) || { total: 0, available: 0, transferred: 0 };
-      const shortage = res.total - inv.total;
+      for (const storage of STORAGES) {
+        const key = `${model}__${color}__${storage}`;
+        const res = resMap.get(key) || { total: 0, matched: 0 };
+        const inv = invMap.get(key) || { total: 0, available: 0, transferred: 0 };
+        if (res.total === 0 && inv.total === 0) continue;
+        const shortage = res.total - inv.total;
 
-      rows.push({
-        model,
-        color,
-        reservations: res.total,
-        matched: res.matched,
-        inventory: inv.total,
-        available: inv.available,
-        transferred: inv.transferred,
-        shortage,
-      });
+        rows.push({
+          model,
+          color,
+          storage,
+          reservations: res.total,
+          matched: res.matched,
+          inventory: inv.total,
+          available: inv.available,
+          transferred: inv.transferred,
+          shortage,
+        });
+      }
     }
   }
 
@@ -104,6 +109,7 @@ export function ModelStatusTable() {
               <TableRow>
                 <TableHead>모델</TableHead>
                 <TableHead>색상</TableHead>
+                <TableHead>용량</TableHead>
                 <TableHead className="text-center">예약</TableHead>
                 <TableHead className="text-center">입고</TableHead>
                 <TableHead className="text-center">매칭완료</TableHead>
@@ -120,7 +126,7 @@ export function ModelStatusTable() {
 
                 return (
                   <motion.tr
-                    key={`${row.model}-${row.color}`}
+                    key={`${row.model}-${row.color}-${row.storage}`}
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
@@ -134,6 +140,7 @@ export function ModelStatusTable() {
                   >
                     <TableCell className="font-medium">{row.model}</TableCell>
                     <TableCell>{row.color}</TableCell>
+                    <TableCell>{row.storage}</TableCell>
                     <TableCell className="text-center">
                       {row.reservations}
                     </TableCell>

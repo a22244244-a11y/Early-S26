@@ -55,10 +55,11 @@ export const countByModelColor = query({
       .query("inventory")
       .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
       .collect();
-    const map = new Map<string, { model: string; color: string; total: number; available: number; transferred: number }>();
+    const map = new Map<string, { model: string; color: string; storage: string; total: number; available: number; transferred: number }>();
     for (const item of all) {
-      const key = `${item.model}__${item.color}`;
-      if (!map.has(key)) map.set(key, { model: item.model, color: item.color, total: 0, available: 0, transferred: 0 });
+      const storage = item.storage || "512GB";
+      const key = `${item.model}__${item.color}__${storage}`;
+      if (!map.has(key)) map.set(key, { model: item.model, color: item.color, storage, total: 0, available: 0, transferred: 0 });
       const entry = map.get(key)!;
       entry.total++;
       if (item.isTransferred) {

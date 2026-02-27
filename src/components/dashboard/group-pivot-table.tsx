@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/lib/auth";
 import { Id } from "../../../convex/_generated/dataModel";
-import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
+import { MODELS, COLORS_BY_MODEL, STORAGES, type Model } from "@/lib/constants";
 
 export function GroupPivotTable() {
   const { groupId } = useAuth();
@@ -44,7 +44,7 @@ export function GroupPivotTable() {
   type PivotRow = {
     total: number;
     mnpTotal: number;
-    byModel: Record<string, { total: number; mnp: number; colorCounts: Array<{ color: string; count: number }> }>;
+    byModel: Record<string, { total: number; mnp: number; colorCounts: Array<{ color: string; count: number }>; storageCounts: Array<{ storage: string; count: number }> }>;
   };
 
   const renderRow = (label: string, data: PivotRow, bold: boolean, bg?: string) => (
@@ -63,6 +63,11 @@ export function GroupPivotTable() {
           ...getColors(model).map((color) => (
             <TableCell key={`${model}-${color}`} className="text-center">
               {md?.colorCounts.find(c => c.color === color)?.count || 0}
+            </TableCell>
+          )),
+          ...STORAGES.map((storage) => (
+            <TableCell key={`${model}-${storage}`} className="text-center text-purple-600">
+              {md?.storageCounts?.find(s => s.storage === storage)?.count || 0}
             </TableCell>
           )),
           <TableCell key={`${model}-mnp`} className="text-center text-blue-600">
@@ -96,7 +101,7 @@ export function GroupPivotTable() {
                   {modelList.map((model) => (
                     <TableHead
                       key={model}
-                      colSpan={getColors(model).length + 2}
+                      colSpan={getColors(model).length + STORAGES.length + 2}
                       className="text-center border-l"
                     >
                       {model}
@@ -109,6 +114,11 @@ export function GroupPivotTable() {
                     ...getColors(model).map((color) => (
                       <TableHead key={`${model}-${color}`} className="text-center whitespace-nowrap">
                         {color.replace("코발트 ", "").replace("스카이 ", "")}
+                      </TableHead>
+                    )),
+                    ...STORAGES.map((storage) => (
+                      <TableHead key={`${model}-${storage}`} className="text-center whitespace-nowrap text-purple-600">
+                        {storage}
                       </TableHead>
                     )),
                     <TableHead key={`${model}-mnp`} className="text-center">MNP</TableHead>,

@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
+import { MODELS, COLORS_BY_MODEL, STORAGES, type Model } from "@/lib/constants";
 import { useAuth } from "@/lib/auth";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -53,7 +53,7 @@ export function AvailableStock() {
 
   const invMap = new Map<string, { available: number; total: number }>();
   for (const entry of inventoryCounts) {
-    invMap.set(`${entry.model}__${entry.color}`, {
+    invMap.set(`${entry.model}__${entry.color}__${entry.storage}`, {
       available: entry.available,
       total: entry.total,
     });
@@ -61,7 +61,7 @@ export function AvailableStock() {
 
   const resMap = new Map<string, { total: number; matched: number }>();
   for (const entry of reservationCounts) {
-    resMap.set(`${entry.model}__${entry.color}`, {
+    resMap.set(`${entry.model}__${entry.color}__${entry.storage}`, {
       total: entry.total,
       matched: entry.matched,
     });
@@ -76,20 +76,22 @@ export function AvailableStock() {
           let totalFree = 0;
           let totalShortage = 0;
 
-          const colorData = colors.map((color) => {
-            const key = `${model}__${color}`;
-            const inv = invMap.get(key);
-            const res = resMap.get(key);
-            const available = inv?.available || 0;
-            const pending = (res?.total || 0) - (res?.matched || 0);
-            // 여유분: 재고 - 대기예약 (판매 가능한 진짜 여유분)
-            const free = Math.max(0, available - pending);
-            // 부족분: 대기예약 - 재고 (재고가 모자란 수량)
-            const shortage = Math.max(0, pending - available);
-            totalFree += free;
-            totalShortage += shortage;
-            return { color, available, pending, free, shortage };
-          });
+          const colorData: Array<{ color: string; storage: string; available: number; pending: number; free: number; shortage: number }> = [];
+          for (const color of colors) {
+            for (const storage of STORAGES) {
+              const key = `${model}__${color}__${storage}`;
+              const inv = invMap.get(key);
+              const res = resMap.get(key);
+              const available = inv?.available || 0;
+              const pending = (res?.total || 0) - (res?.matched || 0);
+              if (available === 0 && pending === 0 && !inv && !res) continue;
+              const free = Math.max(0, available - pending);
+              const shortage = Math.max(0, pending - available);
+              totalFree += free;
+              totalShortage += shortage;
+              colorData.push({ color, storage, available, pending, free, shortage });
+            }
+          }
 
           return (
             <motion.div
@@ -118,7 +120,7 @@ export function AvailableStock() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  {colorData.map(({ color, available, pending, free, shortage }, ci) => {
+                  {colorData.map(({ color, storage, available, pending, free, shortage }, ci) => {
                     // 상태 판별
                     const isShortage = shortage > 0;
                     const isReservedAll = available > 0 && free === 0 && !isShortage;
@@ -131,7 +133,7 @@ export function AvailableStock() {
 
                     return (
                       <motion.div
-                        key={color}
+                        key={`${color}-${storage}`}
                         initial={{ opacity: 0, x: -5 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: mi * 0.1 + ci * 0.03 }}
@@ -142,7 +144,7 @@ export function AvailableStock() {
                             className={`w-3 h-3 rounded-full ${COLOR_DOT[color] || "bg-gray-400"}`}
                           />
                           <span className={`text-sm ${isFree || isReservedAll || isShortage ? "font-medium" : "text-muted-foreground"}`}>
-                            {color}
+                            {color} <span className="text-xs text-muted-foreground">{storage}</span>
                           </span>
                         </div>
                         <div className="flex items-center gap-2">

@@ -274,22 +274,27 @@ export const groupOverview = query({
 
 // ========== Reservation Pivot (SuperAdmin) ==========
 
-function aggregatePivot(reservations: Array<{ model: string; color: string; subscriptionType: string }>) {
+function aggregatePivot(reservations: Array<{ model: string; color: string; storage?: string; subscriptionType: string }>) {
   const total = reservations.length;
   const mnpTotal = reservations.filter((r) => r.subscriptionType === "MNP").length;
   const colorCounts: Record<string, Record<string, number>> = {};
-  const byModel: Record<string, { total: number; mnp: number; colorCounts: Array<{ color: string; count: number }> }> = {};
+  const storageCounts: Record<string, Record<string, number>> = {};
+  const byModel: Record<string, { total: number; mnp: number; colorCounts: Array<{ color: string; count: number }>; storageCounts: Array<{ storage: string; count: number }> }> = {};
   for (const r of reservations) {
     if (!byModel[r.model]) {
-      byModel[r.model] = { total: 0, mnp: 0, colorCounts: [] };
+      byModel[r.model] = { total: 0, mnp: 0, colorCounts: [], storageCounts: [] };
       colorCounts[r.model] = {};
+      storageCounts[r.model] = {};
     }
     byModel[r.model].total += 1;
     colorCounts[r.model][r.color] = (colorCounts[r.model][r.color] || 0) + 1;
+    const storage = r.storage || "512GB";
+    storageCounts[r.model][storage] = (storageCounts[r.model][storage] || 0) + 1;
     if (r.subscriptionType === "MNP") byModel[r.model].mnp += 1;
   }
   for (const model of Object.keys(byModel)) {
     byModel[model].colorCounts = Object.entries(colorCounts[model]).map(([color, count]) => ({ color, count }));
+    byModel[model].storageCounts = Object.entries(storageCounts[model]).map(([storage, count]) => ({ storage, count }));
   }
   return { total, mnpTotal, byModel };
 }
