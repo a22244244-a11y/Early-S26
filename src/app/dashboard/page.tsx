@@ -7,6 +7,7 @@ import { GroupPivotTable } from "@/components/dashboard/group-pivot-table";
 import { AvailableStock } from "@/components/dashboard/available-stock";
 import { ReservationList } from "@/components/dashboard/reservation-list";
 import { SuperadminOverview } from "@/components/dashboard/superadmin-overview";
+import { RecruiterRanking, StoreRanking } from "@/components/dashboard/ranking-tables";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "convex/react";
@@ -55,6 +56,8 @@ export default function DashboardPage() {
             <StatusSummary />
             <AvailableStock />
             <ReservationList />
+            <RecruiterRanking />
+            <StoreRanking />
             {isAdmin && <ModelStatusTable />}
             {isAdmin && <GroupPivotTable />}
           </>

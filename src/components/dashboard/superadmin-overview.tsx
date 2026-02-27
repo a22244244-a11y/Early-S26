@@ -25,6 +25,7 @@ import {
 import { Id } from "../../../convex/_generated/dataModel";
 import { exportReservationsToExcel } from "@/lib/export-excel";
 import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
+import { GlobalRecruiterRanking } from "./ranking-tables";
 
 function formatTime(ts: number) {
   const d = new Date(ts);
@@ -622,6 +623,9 @@ export function SuperadminOverview() {
           </motion.div>
         );
       })()}
+
+      {/* 전체 유치자 순위 */}
+      <GlobalRecruiterRanking />
 
       {/* 선택된 그룹의 예약 고객 리스트 */}
       {selectedGroup && (

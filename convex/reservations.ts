@@ -52,6 +52,77 @@ export const countByModelColor = query({
   },
 });
 
+// 그룹 내 유치자별 순위
+export const recruiterRanking = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const all = await ctx.db
+      .query("reservations")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+    const active = all.filter((r) => r.status !== "취소");
+    const map = new Map<string, { recruiter: string; storeName: string; total: number; mnp: number; completed: number; docReady: number; hasPreOrder: number }>();
+    for (const r of active) {
+      const key = r.recruiter;
+      if (!map.has(key)) map.set(key, { recruiter: r.recruiter, storeName: r.storeName, total: 0, mnp: 0, completed: 0, docReady: 0, hasPreOrder: 0 });
+      const e = map.get(key)!;
+      e.total++;
+      if (r.subscriptionType === "MNP") e.mnp++;
+      if (r.status === "완료") e.completed++;
+      if (r.documentStatus === "작성완료") e.docReady++;
+      if (r.preOrderNumber) e.hasPreOrder++;
+    }
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  },
+});
+
+// 그룹 내 매장별 순위
+export const storeRanking = query({
+  args: { groupId: v.id("groups") },
+  handler: async (ctx, args) => {
+    const all = await ctx.db
+      .query("reservations")
+      .withIndex("by_group", (q) => q.eq("groupId", args.groupId))
+      .collect();
+    const active = all.filter((r) => r.status !== "취소");
+    const map = new Map<string, { storeName: string; total: number; mnp: number; completed: number; docReady: number; hasPreOrder: number }>();
+    for (const r of active) {
+      const key = r.storeName;
+      if (!map.has(key)) map.set(key, { storeName: r.storeName, total: 0, mnp: 0, completed: 0, docReady: 0, hasPreOrder: 0 });
+      const e = map.get(key)!;
+      e.total++;
+      if (r.subscriptionType === "MNP") e.mnp++;
+      if (r.status === "완료") e.completed++;
+      if (r.documentStatus === "작성완료") e.docReady++;
+      if (r.preOrderNumber) e.hasPreOrder++;
+    }
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  },
+});
+
+// 전체 유치자 순위 (superadmin)
+export const globalRecruiterRanking = query({
+  args: {},
+  handler: async (ctx) => {
+    const all = await ctx.db.query("reservations").collect();
+    const active = all.filter((r) => r.status !== "취소");
+    const groups = await ctx.db.query("groups").collect();
+    const groupMap = new Map(groups.map((g) => [g._id, g.name]));
+    const map = new Map<string, { recruiter: string; storeName: string; groupName: string; total: number; mnp: number; completed: number; docReady: number; hasPreOrder: number }>();
+    for (const r of active) {
+      const key = `${r.recruiter}__${r.storeName}`;
+      if (!map.has(key)) map.set(key, { recruiter: r.recruiter, storeName: r.storeName, groupName: groupMap.get(r.groupId!) ?? "", total: 0, mnp: 0, completed: 0, docReady: 0, hasPreOrder: 0 });
+      const e = map.get(key)!;
+      e.total++;
+      if (r.subscriptionType === "MNP") e.mnp++;
+      if (r.status === "완료") e.completed++;
+      if (r.documentStatus === "작성완료") e.docReady++;
+      if (r.preOrderNumber) e.hasPreOrder++;
+    }
+    return Array.from(map.values()).sort((a, b) => b.total - a.total);
+  },
+});
+
 export const create = mutation({
   args: {
     groupId: v.id("groups"),
