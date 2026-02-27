@@ -25,26 +25,26 @@ export default function DashboardPage() {
   return (
     <PageTransition>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">대시보드</h1>
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h1 className="text-2xl font-bold shrink-0">대시보드</h1>
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
             {groupLinks?.onsaleDeviceChangeUrl && (
               <a href={groupLinks.onsaleDeviceChangeUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm">온세일 기기변경</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">온세일 기기변경</Button>
               </a>
             )}
             {groupLinks?.onsaleMNPUrl && (
               <a href={groupLinks.onsaleMNPUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm">온세일 번호이동</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">온세일 번호이동</Button>
               </a>
             )}
             {groupLinks?.onsaleNewUrl && (
               <a href={groupLinks.onsaleNewUrl} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm">온세일 신규</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">온세일 신규</Button>
               </a>
             )}
             <a href={preOrderUrl} target="_blank" rel="noopener noreferrer">
-              <Button variant="outline" size="sm">사전예약 공식홈페이지</Button>
+              <Button variant="outline" size="sm" className="whitespace-nowrap">사전예약 공식홈페이지</Button>
             </a>
           </div>
         </div>
