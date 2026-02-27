@@ -107,11 +107,16 @@ export const globalRecruiterRanking = query({
     const all = await ctx.db.query("reservations").collect();
     const active = all.filter((r) => r.status !== "취소");
     const groups = await ctx.db.query("groups").collect();
+    const stores = await ctx.db.query("stores").collect();
     const groupMap = new Map(groups.map((g) => [g._id, g.name]));
+    // storeName → { 정식매장명, 그룹명 } 매핑
+    const storeToGroup = new Map(stores.map((s) => [s.name, { storeName: s.name, groupName: groupMap.get(s.groupId) ?? "" }]));
     const map = new Map<string, { recruiter: string; storeName: string; groupName: string; total: number; mnp: number; completed: number; docReady: number; hasPreOrder: number }>();
     for (const r of active) {
+      const storeInfo = storeToGroup.get(r.storeName);
+      const groupName = r.groupId ? (groupMap.get(r.groupId) ?? "") : (storeInfo?.groupName ?? "");
       const key = `${r.recruiter}__${r.storeName}`;
-      if (!map.has(key)) map.set(key, { recruiter: r.recruiter, storeName: r.storeName, groupName: groupMap.get(r.groupId!) ?? "", total: 0, mnp: 0, completed: 0, docReady: 0, hasPreOrder: 0 });
+      if (!map.has(key)) map.set(key, { recruiter: r.recruiter, storeName: r.storeName, groupName, total: 0, mnp: 0, completed: 0, docReady: 0, hasPreOrder: 0 });
       const e = map.get(key)!;
       e.total++;
       if (r.subscriptionType === "MNP") e.mnp++;
