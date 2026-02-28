@@ -66,6 +66,7 @@ export function ReservationList() {
   const updateColor = useMutation(api.reservations.updateColor);
   const updateModel = useMutation(api.reservations.updateModel);
   const updatePreOrderNumber = useMutation(api.reservations.updatePreOrderNumber);
+  const activateReservation = useMutation(api.reservations.activate);
 
   // 다이얼로그 상태
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -97,7 +98,7 @@ export function ReservationList() {
     if (filterSubscription !== "all" && r.subscriptionType !== filterSubscription) return false;
     return true;
   });
-  const completedReservations = reservations?.filter((r) => r.status === "완료") ?? [];
+  const completedReservations = reservations?.filter((r) => r.status === "완료" || r.status === "개통완료") ?? [];
   const pendingCount = visibleReservations.filter((r) => r.status === "대기").length;
 
   async function handleDocStatus(id: string) {
@@ -176,6 +177,16 @@ export function ReservationList() {
       toast.success("사전예약번호가 저장되었습니다.");
       setPreOrderDialog(null);
       setPreOrderNumber("");
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  }
+
+  async function handleActivate(id: string, customerName: string) {
+    if (!confirm(`${customerName} 고객의 개통완료 처리를 하시겠습니까?`)) return;
+    try {
+      await activateReservation({ id: id as Id<"reservations"> });
+      toast.success("개통완료 처리되었습니다.");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -582,29 +593,45 @@ export function ReservationList() {
               <>
                 {/* Mobile */}
                 <div className="space-y-3 md:hidden">
-                  {completedReservations.map((r, i) => (
-                    <motion.div
-                      key={r._id}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.03 }}
-                      className="border rounded-lg p-3 space-y-1 bg-green-50"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">{r.customerName}</span>
-                        <Badge variant="default" className="bg-green-600">배정완료</Badge>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {r.model} / {r.color} / {r.storage || "512GB"}
-                      </div>
-                      <div className="text-sm">
-                        일련번호: <span className="font-mono font-medium">{r.matchedSerialNumber}</span>
-                      </div>
-                      {r.storeName && (
-                        <div className="text-xs text-muted-foreground">{r.storeName}</div>
-                      )}
-                    </motion.div>
-                  ))}
+                  {completedReservations.map((r, i) => {
+                    const isActivated = r.status === "개통완료";
+                    return (
+                      <motion.div
+                        key={r._id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                        className={`border rounded-lg p-3 space-y-1 ${isActivated ? "bg-blue-50" : "bg-green-50"}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold">{r.customerName}</span>
+                          {isActivated ? (
+                            <Badge variant="default" className="bg-blue-600">개통완료</Badge>
+                          ) : (
+                            <Badge variant="default" className="bg-green-600">배정완료</Badge>
+                          )}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          {r.model} / {r.color} / {r.storage || "512GB"}
+                        </div>
+                        <div className="text-sm">
+                          일련번호: <span className="font-mono font-medium">{r.matchedSerialNumber}</span>
+                        </div>
+                        {r.storeName && (
+                          <div className="text-xs text-muted-foreground">{r.storeName}</div>
+                        )}
+                        {!isActivated && (
+                          <Button
+                            size="sm"
+                            className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
+                            onClick={() => handleActivate(r._id, r.customerName)}
+                          >
+                            개통완료
+                          </Button>
+                        )}
+                      </motion.div>
+                    );
+                  })}
                 </div>
                 {/* Desktop */}
                 <div className="hidden md:block overflow-x-auto">
@@ -619,29 +646,48 @@ export function ReservationList() {
                         <TableHead>배정 일련번호</TableHead>
                         <TableHead>가입유형</TableHead>
                         <TableHead>상태</TableHead>
+                        <TableHead>작업</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {completedReservations.map((r, i) => (
-                        <motion.tr
-                          key={r._id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.03 }}
-                          className="border-b transition-colors hover:bg-muted/50"
-                        >
-                          <TableCell className="font-medium">{r.customerName}</TableCell>
-                          <TableCell className="text-sm">{r.storeName}</TableCell>
-                          <TableCell>{r.model}</TableCell>
-                          <TableCell>{r.color}</TableCell>
-                          <TableCell>{r.storage || "512GB"}</TableCell>
-                          <TableCell className="font-mono text-sm">{r.matchedSerialNumber}</TableCell>
-                          <TableCell className="text-sm">{r.subscriptionType}</TableCell>
-                          <TableCell>
-                            <Badge variant="default" className="bg-green-600">배정완료</Badge>
-                          </TableCell>
-                        </motion.tr>
-                      ))}
+                      {completedReservations.map((r, i) => {
+                        const isActivated = r.status === "개통완료";
+                        return (
+                          <motion.tr
+                            key={r._id}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.03 }}
+                            className={`border-b transition-colors hover:bg-muted/50 ${isActivated ? "bg-blue-50" : ""}`}
+                          >
+                            <TableCell className="font-medium">{r.customerName}</TableCell>
+                            <TableCell className="text-sm">{r.storeName}</TableCell>
+                            <TableCell>{r.model}</TableCell>
+                            <TableCell>{r.color}</TableCell>
+                            <TableCell>{r.storage || "512GB"}</TableCell>
+                            <TableCell className="font-mono text-sm">{r.matchedSerialNumber}</TableCell>
+                            <TableCell className="text-sm">{r.subscriptionType}</TableCell>
+                            <TableCell>
+                              {isActivated ? (
+                                <Badge variant="default" className="bg-blue-600">개통완료</Badge>
+                              ) : (
+                                <Badge variant="default" className="bg-green-600">배정완료</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {!isActivated && (
+                                <Button
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                  onClick={() => handleActivate(r._id, r.customerName)}
+                                >
+                                  개통완료
+                                </Button>
+                              )}
+                            </TableCell>
+                          </motion.tr>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>

@@ -31,6 +31,7 @@ export const colorValidator = v.union(
 export const reservationStatusValidator = v.union(
   v.literal("대기"),
   v.literal("완료"),
+  v.literal("개통완료"),
   v.literal("취소")
 );
 
@@ -107,6 +108,7 @@ export default defineSchema({
     isMatched: v.boolean(),
     isTransferred: v.optional(v.boolean()),
     transferNote: v.optional(v.string()),
+    isActivated: v.optional(v.boolean()),
     arrivalDate: v.string(),
   })
     .index("by_model_color_matched", ["model", "color", "isMatched"])

@@ -123,9 +123,13 @@ export function InventoryTable() {
   function getStatusBadge(item: {
     isMatched: boolean;
     isTransferred?: boolean;
+    isActivated?: boolean;
   }) {
     if (item.isTransferred) {
       return <Badge variant="outline">타점출고</Badge>;
+    }
+    if (item.isActivated) {
+      return <Badge variant="default" className="bg-blue-600">개통완료</Badge>;
     }
     if (item.isMatched) {
       return <Badge variant="default">매칭완료</Badge>;
@@ -209,7 +213,7 @@ export function InventoryTable() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          {item.isMatched && !item.isTransferred && (
+                          {item.isMatched && !item.isTransferred && !item.isActivated && (
                             <Button
                               variant="outline"
                               size="sm"

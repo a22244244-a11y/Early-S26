@@ -46,7 +46,7 @@ export const countByModelColor = query({
       if (!map.has(key)) map.set(key, { model: r.model, color: r.color, storage, total: 0, matched: 0, docCompleted: 0, hasPreOrder: 0 });
       const entry = map.get(key)!;
       entry.total++;
-      if (r.status === "완료") entry.matched++;
+      if (r.status === "완료" || r.status === "개통완료") entry.matched++;
       if (r.documentStatus === "작성완료") entry.docCompleted++;
       if (r.preOrderNumber) entry.hasPreOrder++;
     }
@@ -70,7 +70,7 @@ export const recruiterRanking = query({
       const e = map.get(key)!;
       e.total++;
       if (r.subscriptionType === "MNP") e.mnp++;
-      if (r.status === "완료") e.completed++;
+      if (r.status === "완료" || r.status === "개통완료") e.completed++;
       if (r.documentStatus === "작성완료") e.docReady++;
       if (r.preOrderNumber) e.hasPreOrder++;
     }
@@ -94,7 +94,7 @@ export const storeRanking = query({
       const e = map.get(key)!;
       e.total++;
       if (r.subscriptionType === "MNP") e.mnp++;
-      if (r.status === "완료") e.completed++;
+      if (r.status === "완료" || r.status === "개통완료") e.completed++;
       if (r.documentStatus === "작성완료") e.docReady++;
       if (r.preOrderNumber) e.hasPreOrder++;
     }
@@ -122,7 +122,7 @@ export const globalRecruiterRanking = query({
       const e = map.get(key)!;
       e.total++;
       if (r.subscriptionType === "MNP") e.mnp++;
-      if (r.status === "완료") e.completed++;
+      if (r.status === "완료" || r.status === "개통완료") e.completed++;
       if (r.documentStatus === "작성완료") e.docReady++;
       if (r.preOrderNumber) e.hasPreOrder++;
     }
@@ -149,7 +149,7 @@ export const globalStoreRanking = query({
       const e = map.get(key)!;
       e.total++;
       if (r.subscriptionType === "MNP") e.mnp++;
-      if (r.status === "완료") e.completed++;
+      if (r.status === "완료" || r.status === "개통완료") e.completed++;
       if (r.documentStatus === "작성완료") e.docReady++;
       if (r.preOrderNumber) e.hasPreOrder++;
     }
@@ -201,7 +201,7 @@ export const cancel = mutation({
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.id);
     if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
-    if (reservation.status === "완료") throw new Error("매칭 완료된 예약은 취소할 수 없습니다. 먼저 매칭을 해제하세요.");
+    if (reservation.status === "완료" || reservation.status === "개통완료") throw new Error("매칭 완료된 예약은 취소할 수 없습니다. 먼저 매칭을 해제하세요.");
     if (reservation.status === "취소") throw new Error("이미 취소된 예약입니다.");
     await ctx.db.patch(args.id, { status: "취소" });
   },
@@ -226,11 +226,33 @@ export const remove = mutation({
   },
 });
 
+export const activate = mutation({
+  args: { id: v.id("reservations") },
+  handler: async (ctx, args) => {
+    const reservation = await ctx.db.get(args.id);
+    if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
+    if (reservation.status !== "완료") throw new Error("배정완료 상태의 예약만 개통완료 처리할 수 있습니다.");
+    await ctx.db.patch(args.id, { status: "개통완료" });
+    if (reservation.matchedSerialNumber) {
+      const inventoryItems = await ctx.db
+        .query("inventory")
+        .withIndex("by_serial", (q) =>
+          q.eq("serialNumber", reservation.matchedSerialNumber!)
+        )
+        .collect();
+      for (const item of inventoryItems) {
+        await ctx.db.patch(item._id, { isActivated: true });
+      }
+    }
+  },
+});
+
 export const unmatch = mutation({
   args: { id: v.id("reservations") },
   handler: async (ctx, args) => {
     const reservation = await ctx.db.get(args.id);
     if (!reservation) throw new Error("예약을 찾을 수 없습니다.");
+    if (reservation.status === "개통완료") throw new Error("개통완료된 예약은 배정 해제할 수 없습니다.");
     if (reservation.matchedSerialNumber) {
       const inventoryItems = await ctx.db
         .query("inventory")
