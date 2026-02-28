@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth";
-import { MODELS, COLORS_BY_MODEL, type Model } from "@/lib/constants";
+import { MODELS, COLORS_BY_MODEL, STORAGES, type Model } from "@/lib/constants";
 import { exportReservationsToExcel } from "@/lib/export-excel";
 import { Id } from "../../../convex/_generated/dataModel";
 
@@ -71,17 +71,32 @@ export function ReservationList() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [detailReservation, setDetailReservation] = useState<any>(null);
   const [colorDialog, setColorDialog] = useState<{ id: string; model: string; color: string } | null>(null);
-  const [modelDialog, setModelDialog] = useState<{ id: string; model: string; color: string } | null>(null);
+  const [modelDialog, setModelDialog] = useState<{ id: string; model: string; color: string; storage: string } | null>(null);
   const [preOrderDialog, setPreOrderDialog] = useState<{ id: string; current: string } | null>(null);
   const [selectedColor, setSelectedColor] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedModelColor, setSelectedModelColor] = useState("");
+  const [selectedModelStorage, setSelectedModelStorage] = useState("512GB");
   const [preOrderNumber, setPreOrderNumber] = useState("");
 
   const [showCompleted, setShowCompleted] = useState(false);
 
+  // 필터/검색
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterModel, setFilterModel] = useState<string>("all");
+  const [filterSubscription, setFilterSubscription] = useState<string>("all");
+
   // 대기 + 취소 예약 표시 (완료 제외)
-  const visibleReservations = reservations?.filter((r) => r.status === "대기" || r.status === "취소") ?? [];
+  const allVisible = reservations?.filter((r) => r.status === "대기" || r.status === "취소") ?? [];
+  const visibleReservations = allVisible.filter((r) => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!r.customerName.toLowerCase().includes(q) && !r.recruiter.toLowerCase().includes(q)) return false;
+    }
+    if (filterModel !== "all" && r.model !== filterModel) return false;
+    if (filterSubscription !== "all" && r.subscriptionType !== filterSubscription) return false;
+    return true;
+  });
   const completedReservations = reservations?.filter((r) => r.status === "완료") ?? [];
   const pendingCount = visibleReservations.filter((r) => r.status === "대기").length;
 
@@ -139,11 +154,13 @@ export function ReservationList() {
         id: modelDialog.id as Id<"reservations">,
         model: selectedModel as any,
         color: selectedModelColor as any,
+        storage: selectedModelStorage as any,
       });
       toast.success("모델이 변경되었습니다.");
       setModelDialog(null);
       setSelectedModel("");
       setSelectedModelColor("");
+      setSelectedModelStorage("512GB");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -187,6 +204,50 @@ export function ReservationList() {
               </Button>
             )}
           </CardTitle>
+          <div className="flex flex-col md:flex-row gap-2 mt-3">
+            <Input
+              placeholder="고객명 / 유치자 검색"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="md:w-48 text-base md:text-sm"
+            />
+            <Select value={filterModel} onValueChange={setFilterModel}>
+              <SelectTrigger className="md:w-36">
+                <SelectValue placeholder="모델 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 모델</SelectItem>
+                {MODELS.map((model) => (
+                  <SelectItem key={model} value={model}>{model}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterSubscription} onValueChange={setFilterSubscription}>
+              <SelectTrigger className="md:w-36">
+                <SelectValue placeholder="가입유형 필터" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">전체 유형</SelectItem>
+                <SelectItem value="신규가입">신규가입</SelectItem>
+                <SelectItem value="기기변경">기기변경</SelectItem>
+                <SelectItem value="번호이동">번호이동</SelectItem>
+              </SelectContent>
+            </Select>
+            {(searchQuery || filterModel !== "all" || filterSubscription !== "all") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-3"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterModel("all");
+                  setFilterSubscription("all");
+                }}
+              >
+                초기화
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {visibleReservations.length === 0 ? (
@@ -297,9 +358,10 @@ export function ReservationList() {
                             size="sm"
                             className="h-9"
                             onClick={() => {
-                              setModelDialog({ id: r._id, model: r.model, color: r.color });
+                              setModelDialog({ id: r._id, model: r.model, color: r.color, storage: r.storage || "512GB" });
                               setSelectedModel(r.model);
                               setSelectedModelColor(r.color);
+                              setSelectedModelStorage(r.storage || "512GB");
                             }}
                           >
                             모델변경
@@ -456,9 +518,10 @@ export function ReservationList() {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => {
-                                    setModelDialog({ id: r._id, model: r.model, color: r.color });
+                                    setModelDialog({ id: r._id, model: r.model, color: r.color, storage: r.storage || "512GB" });
                                     setSelectedModel(r.model);
                                     setSelectedModelColor(r.color);
+                                    setSelectedModelStorage(r.storage || "512GB");
                                   }}
                                 >
                                   모델변경
@@ -664,6 +727,18 @@ export function ReservationList() {
                   ))}
               </SelectContent>
             </Select>
+            <Select value={selectedModelStorage} onValueChange={setSelectedModelStorage}>
+              <SelectTrigger>
+                <SelectValue placeholder="용량 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                {STORAGES.map((storage) => (
+                  <SelectItem key={storage} value={storage}>
+                    {storage}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setModelDialog(null)}>
@@ -674,7 +749,7 @@ export function ReservationList() {
               disabled={
                 !selectedModel ||
                 !selectedModelColor ||
-                (selectedModel === modelDialog?.model && selectedModelColor === modelDialog?.color)
+                (selectedModel === modelDialog?.model && selectedModelColor === modelDialog?.color && selectedModelStorage === modelDialog?.storage)
               }
             >
               변경
