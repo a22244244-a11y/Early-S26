@@ -7,6 +7,7 @@ interface Reservation {
   model: string;
   color: string;
   storage?: string;
+  productNumber: string;
   subscriptionType: string;
   activationTiming: string;
   preOrderNumber?: string;
@@ -37,6 +38,7 @@ export function exportReservationsToExcel(
     모델: r.model,
     색상: r.color,
     용량: r.storage || "512GB",
+    개통번호: r.productNumber || "",
     가입유형: r.subscriptionType,
     개통시점: r.activationTiming,
     사전예약번호: r.preOrderNumber || "",
@@ -56,6 +58,7 @@ export function exportReservationsToExcel(
     { wch: 14 }, // 모델
     { wch: 14 }, // 색상
     { wch: 8 },  // 용량
+    { wch: 14 }, // 개통번호
     { wch: 10 }, // 가입유형
     { wch: 12 }, // 개통시점
     { wch: 16 }, // 사전예약번호
