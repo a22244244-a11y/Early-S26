@@ -617,6 +617,13 @@ export function ReservationList() {
                         <div className="text-sm">
                           일련번호: <span className="font-mono font-medium">{r.matchedSerialNumber}</span>
                         </div>
+                        <div className="text-sm">
+                          사전예약번호: {r.preOrderNumber ? (
+                            <span className="text-green-600 font-medium">{r.preOrderNumber}</span>
+                          ) : (
+                            <span className="text-muted-foreground">미입력</span>
+                          )}
+                        </div>
                         {r.storeName && (
                           <div className="text-xs text-muted-foreground">{r.storeName}</div>
                         )}
@@ -644,6 +651,7 @@ export function ReservationList() {
                         <TableHead>색상</TableHead>
                         <TableHead>용량</TableHead>
                         <TableHead>배정 일련번호</TableHead>
+                        <TableHead>사전예약번호</TableHead>
                         <TableHead>가입유형</TableHead>
                         <TableHead>상태</TableHead>
                         <TableHead>작업</TableHead>
@@ -666,6 +674,13 @@ export function ReservationList() {
                             <TableCell>{r.color}</TableCell>
                             <TableCell>{r.storage || "512GB"}</TableCell>
                             <TableCell className="font-mono text-sm">{r.matchedSerialNumber}</TableCell>
+                            <TableCell className="text-sm">
+                              {r.preOrderNumber ? (
+                                <span className="text-green-600 font-medium">{r.preOrderNumber}</span>
+                              ) : (
+                                <span className="text-muted-foreground">미입력</span>
+                              )}
+                            </TableCell>
                             <TableCell className="text-sm">{r.subscriptionType}</TableCell>
                             <TableCell>
                               {isActivated ? (
