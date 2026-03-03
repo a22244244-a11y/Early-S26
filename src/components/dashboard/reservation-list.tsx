@@ -87,6 +87,10 @@ export function ReservationList() {
   const [filterModel, setFilterModel] = useState<string>("all");
   const [filterSubscription, setFilterSubscription] = useState<string>("all");
 
+  // 배정완료 필터/검색
+  const [completedSearch, setCompletedSearch] = useState("");
+  const [completedStoreFilter, setCompletedStoreFilter] = useState<string>("all");
+
   // 대기 + 취소 예약 표시 (완료 제외)
   const allVisible = reservations?.filter((r) => r.status === "대기" || r.status === "취소") ?? [];
   const visibleReservations = allVisible.filter((r) => {
@@ -98,7 +102,19 @@ export function ReservationList() {
     if (filterSubscription !== "all" && r.subscriptionType !== filterSubscription) return false;
     return true;
   });
-  const completedReservations = reservations?.filter((r) => r.status === "완료" || r.status === "개통완료") ?? [];
+  const allCompleted = reservations?.filter((r) => r.status === "완료" || r.status === "개통완료") ?? [];
+  const completedReservations = allCompleted.filter((r) => {
+    if (completedSearch) {
+      const q = completedSearch.toLowerCase();
+      if (
+        !r.customerName.toLowerCase().includes(q) &&
+        !(r.matchedSerialNumber || "").toLowerCase().includes(q)
+      ) return false;
+    }
+    if (completedStoreFilter !== "all" && r.storeName !== completedStoreFilter) return false;
+    return true;
+  });
+  const completedStoreNames = [...new Set(allCompleted.map((r) => r.storeName))].sort();
   const pendingCount = visibleReservations.filter((r) => r.status === "대기").length;
 
   async function handleDocStatus(id: string) {
@@ -569,19 +585,66 @@ export function ReservationList() {
 
       {/* 배정완료 고객 */}
       <Card>
-        <CardHeader
-          className="cursor-pointer"
-          onClick={() => setShowCompleted(!showCompleted)}
-        >
-          <CardTitle className="flex items-center gap-2">
+        <CardHeader>
+          <CardTitle
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setShowCompleted(!showCompleted)}
+          >
             배정완료 고객
             <Badge variant="default" className="bg-green-600">
-              {completedReservations.length}건
+              {allCompleted.length}건
             </Badge>
             <span className="text-sm font-normal text-muted-foreground ml-auto">
               {showCompleted ? "접기" : "펼치기"}
             </span>
           </CardTitle>
+          {showCompleted && (
+            <div className="flex flex-col md:flex-row gap-2 mt-3">
+              <Input
+                placeholder="고객명 / 일련번호 검색"
+                value={completedSearch}
+                onChange={(e) => setCompletedSearch(e.target.value)}
+                className="md:w-48 text-base md:text-sm"
+              />
+              <Select value={completedStoreFilter} onValueChange={setCompletedStoreFilter}>
+                <SelectTrigger className="md:w-40">
+                  <SelectValue placeholder="매장 필터" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">전체 매장</SelectItem>
+                  {completedStoreNames.map((store) => (
+                    <SelectItem key={store} value={store}>{store}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {(completedSearch || completedStoreFilter !== "all") && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 px-3"
+                  onClick={() => {
+                    setCompletedSearch("");
+                    setCompletedStoreFilter("all");
+                  }}
+                >
+                  초기화
+                </Button>
+              )}
+              {isAdmin && completedReservations.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 md:ml-auto"
+                  onClick={() => {
+                    const today = new Date().toISOString().slice(0, 10);
+                    exportReservationsToExcel(completedReservations, `배정완료_${today}`);
+                  }}
+                >
+                  엑셀 다운로드
+                </Button>
+              )}
+            </div>
+          )}
         </CardHeader>
         {showCompleted && (
           <CardContent>
@@ -613,6 +676,10 @@ export function ReservationList() {
                         </div>
                         <div className="text-sm text-muted-foreground">
                           {r.model} / {r.color} / {r.storage || "512GB"}
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-muted-foreground">
+                          <span>담당자: {r.recruiter}</span>
+                          <span>연락처: {r.productNumber}</span>
                         </div>
                         <div className="text-sm">
                           일련번호: <span className="font-mono font-medium">{r.matchedSerialNumber}</span>
@@ -646,6 +713,8 @@ export function ReservationList() {
                     <TableHeader>
                       <TableRow>
                         <TableHead>고객명</TableHead>
+                        <TableHead>연락처</TableHead>
+                        <TableHead>담당자</TableHead>
                         <TableHead>매장</TableHead>
                         <TableHead>모델</TableHead>
                         <TableHead>색상</TableHead>
@@ -669,6 +738,8 @@ export function ReservationList() {
                             className={`border-b transition-colors hover:bg-muted/50 ${isActivated ? "bg-blue-50" : ""}`}
                           >
                             <TableCell className="font-medium">{r.customerName}</TableCell>
+                            <TableCell className="text-sm">{r.productNumber}</TableCell>
+                            <TableCell className="text-sm">{r.recruiter}</TableCell>
                             <TableCell className="text-sm">{r.storeName}</TableCell>
                             <TableCell>{r.model}</TableCell>
                             <TableCell>{r.color}</TableCell>
