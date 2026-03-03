@@ -694,15 +694,25 @@ export function ReservationList() {
                         {r.storeName && (
                           <div className="text-xs text-muted-foreground">{r.storeName}</div>
                         )}
-                        {!isActivated && (
+                        <div className="flex gap-2 mt-2">
                           <Button
+                            variant="secondary"
                             size="sm"
-                            className="w-full mt-2 bg-blue-600 hover:bg-blue-700"
-                            onClick={() => handleActivate(r._id, r.customerName)}
+                            className="flex-1 h-9"
+                            onClick={() => setDetailReservation(r)}
                           >
-                            개통완료
+                            상세보기
                           </Button>
-                        )}
+                          {!isActivated && (
+                            <Button
+                              size="sm"
+                              className="flex-1 h-9 bg-blue-600 hover:bg-blue-700"
+                              onClick={() => handleActivate(r._id, r.customerName)}
+                            >
+                              개통완료
+                            </Button>
+                          )}
+                        </div>
                       </motion.div>
                     );
                   })}
@@ -761,15 +771,24 @@ export function ReservationList() {
                               )}
                             </TableCell>
                             <TableCell>
-                              {!isActivated && (
+                              <div className="flex gap-1">
                                 <Button
+                                  variant="secondary"
                                   size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700"
-                                  onClick={() => handleActivate(r._id, r.customerName)}
+                                  onClick={() => setDetailReservation(r)}
                                 >
-                                  개통완료
+                                  상세보기
                                 </Button>
-                              )}
+                                {!isActivated && (
+                                  <Button
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                    onClick={() => handleActivate(r._id, r.customerName)}
+                                  >
+                                    개통완료
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                           </motion.tr>
                         );
