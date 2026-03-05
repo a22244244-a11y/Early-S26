@@ -1,4 +1,5 @@
 import { mutation } from "./_generated/server";
+import { v } from "convex/values";
 
 export const setDefaultStorage = mutation({
   args: {},
@@ -24,5 +25,31 @@ export const setDefaultStorage = mutation({
     }
 
     return { reservationsUpdated: resCount, inventoryUpdated: invCount };
+  },
+});
+
+export const updateStorePassword = mutation({
+  args: {
+    storeName: v.string(),
+    newPassword: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const store = await ctx.db
+      .query("stores")
+      .withIndex("by_name", (q) => q.eq("name", args.storeName))
+      .first();
+    if (!store) throw new Error(`매장 "${args.storeName}"을 찾을 수 없습니다.`);
+
+    const allUsers = await ctx.db.query("users").collect();
+    const storeUsers = allUsers.filter((u) => u.storeId === store._id);
+
+    let updated = 0;
+    const names: string[] = [];
+    for (const user of storeUsers) {
+      await ctx.db.patch(user._id, { passwordHash: args.newPassword });
+      names.push(user.name);
+      updated++;
+    }
+    return { storeName: args.storeName, usersUpdated: updated, userNames: names };
   },
 });
