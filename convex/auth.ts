@@ -1,5 +1,33 @@
-import { mutation } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
+
+export const getAuthVersion = query({
+  args: {},
+  handler: async (ctx) => {
+    const setting = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("key", "authVersion"))
+      .first();
+    return setting?.value ?? 0;
+  },
+});
+
+export const forceLogoutAll = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const setting = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("key", "authVersion"))
+      .first();
+    if (setting) {
+      await ctx.db.patch(setting._id, { value: setting.value + 1 });
+      return setting.value + 1;
+    } else {
+      await ctx.db.insert("settings", { key: "authVersion", value: 1 });
+      return 1;
+    }
+  },
+});
 
 export const login = mutation({
   args: {
@@ -28,6 +56,12 @@ export const login = mutation({
       storeName = store?.name;
     }
 
+    const authVersionSetting = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("key", "authVersion"))
+      .first();
+    const authVersion = authVersionSetting?.value ?? 0;
+
     return {
       _id: user._id,
       loginId: user.loginId,
@@ -37,6 +71,7 @@ export const login = mutation({
       groupName,
       storeId: user.storeId,
       storeName,
+      authVersion,
     };
   },
 });

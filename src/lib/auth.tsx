@@ -8,7 +8,7 @@ import {
   ReactNode,
 } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useConvex } from "convex/react";
+import { useConvex, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 
@@ -57,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const convex = useConvex();
+  const serverAuthVersion = useQuery(api.auth.getAuthVersion);
 
   useEffect(() => {
     const saved = localStorage.getItem("auth_user");
@@ -69,6 +70,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     setIsLoaded(true);
   }, []);
+
+  // authVersion 체크: 서버 버전과 로컬 버전이 다르면 강제 로그아웃
+  useEffect(() => {
+    if (serverAuthVersion === undefined || serverAuthVersion === null) return;
+    const localVersion = Number(localStorage.getItem("auth_version") ?? "0");
+    if (serverAuthVersion > localVersion && user) {
+      setUser(null);
+      setViewAs(null);
+      localStorage.removeItem("auth_user");
+      localStorage.setItem("auth_version", String(serverAuthVersion));
+      router.replace("/login");
+    }
+  }, [serverAuthVersion, user, router]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -110,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       setUser(newUser);
       localStorage.setItem("auth_user", JSON.stringify(newUser));
+      localStorage.setItem("auth_version", String(result.authVersion ?? 0));
       return true;
     } catch {
       return false;

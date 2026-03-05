@@ -115,6 +115,11 @@ export default defineSchema({
     .index("by_serial", ["serialNumber"])
     .index("by_group", ["groupId"]),
 
+  settings: defineTable({
+    key: v.string(),
+    value: v.number(),
+  }).index("by_key", ["key"]),
+
   groupLinks: defineTable({
     groupId: v.id("groups"),
     preOrderUrl: v.optional(v.string()),
